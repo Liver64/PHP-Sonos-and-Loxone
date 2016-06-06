@@ -172,7 +172,7 @@ http://DEINE_IP/DEIN_VERZEICHNIS/index.php?zone=DEINE_ZONE&action=setrelativegro
 http://DEINE_IP/DEIN_VERZEICHNIS/index.php?zone=DEINE_ZONE&action=becomegroupcoordinator
 
 ## Setzt den Schlummermodus für angegebene Zone auf 5 Minuten. Bei kleiner 10 Minuten nur einstellige Eingabe Bsp.:5 für 5 Minuten) 
-## generell erlaubte Eingabe: 1-59
+generell erlaubte Eingabe: 1-59
 http://DEINE_IP/DEIN_VERZEICHNIS/index.php?zone=DEINE_ZONE&action=sleeptimer&timer=5
 
 
