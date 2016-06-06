@@ -18,7 +18,7 @@ Für TTS benötigst du noch einen API-Key von VoicesRSS.org oder ivona.com
 Unbedingt sicherstellen das dein Webserver User Schreibrechte für DEIN_VEREICHNIS besitzt.
 
 Syntax Beispiele für Browser:
-=============================
+
 ## Setzt den Playmode. Erlaubte Möglichkeiten sind: NORMAL, REPEAT_ALL, SHUFFLE und SHUFFLE_NOREPEAT
 http://DEINE_IP/DEIN_VERZEICHNIS/index.php?zone=DEINE_ZONE&action=playmode&playmode=normal
 
@@ -34,7 +34,7 @@ http://DEINE_IP/DEIN_VERZEICHNIS/index.php?zone=DEINE_ZONE&action=nextradio
 ## Spielt vorherigen Radio Sender aus der Liste in config.php
 http://DEINE_IP/DEIN_VERZEICHNIS/index.php?zone=DEINE_ZONE&action=previousradio
 
-## Startet play mit Lautstärke 20% und der lautstärkeanhebung 'alarm'
+## Startet play mit Lautstärke 20% und der Lautstärkeanhebung 'alarm'
 http://DEINE_IP/DEIN_VERZEICHNIS/index.php?zone=DEINE_ZONE&action=play&Volume=20&rampto=alarm
 
 ## Folgende action sind möglich: toggle, stop, next, pause, previous, rewind, 
@@ -43,7 +43,7 @@ http://DEINE_IP/DEIN_VERZEICHNIS/index.php?zone=DEINE_ZONE&action=stop
 ## Laustärke wird innerhalb 17 Sekunden linear auf Null gefahren (Art Schlummerfunktion) und Wiedergabe gestoppt
 http://DEINE_IP/DEIN_VERZEICHNIS/index.php?zone=DEINE_ZONE&action=softstop
 
-## Setzt angegeben Zone auf mute wenn Wert true, unmute mit Wert false
+## Setzt angegebene Zone auf mute wenn Wert true, unmute mit Wert false
 http://DEINE_IP/DEIN_VERZEICHNIS/index.php?zone=DEINE_ZONE&action=mute&mute=true
 
 ## Lautstärke leiser (die Schritt Vorgabe wird in Prozent in der config.php gepflegt)
@@ -56,35 +56,20 @@ http://DEINE_IP/DEIN_VERZEICHNIS/index.php?zone=DEINE_ZONE&action=volumeup
 http://DEINE_IP/DEIN_VERZEICHNIS/index.php?zone=DEINE_ZONE&action=clearqueue
 
 ## Spielt MP3 Datei ohne jingle/gong vor der Durchsage
-----------------------------------------
-## Stoppt gegenwärtig laufende Playliste/Radiostation, speichert die Lautstärke und Playliste/Radiostation, 
-## setzt die Lautstärke auf 30%, spielt die Datei 1.mp3 die im Ordner 'messagepath' gespeichert ist,
-## nach dem Abspielen wird die vorherige Playliste/Radiostation wieder geladen und mit der vorher gespeicherten 
-## Lautstärke wieder abgespielt.
-## Wenn aktuell nichts läuft, denn noch eine Playliste/Radiostation in der Zone aktiv ist, bleibt die Zone stumm
-## und die Playliste/Radiostation wird nur geladen.
+Stoppt gegenwärtig laufende Playliste/Radiostation, speichert die Lautstärke und Playliste/Radiostation, setzt die Lautstärke auf 30%, spielt die Datei 1.mp3 die im Ordner 'messagepath' gespeichert ist,
+nach dem Abspielen wird die vorherige Playliste/Radiostation wieder geladen und mit der vorher gespeicherten Lautstärke wieder abgespielt.
+Wenn aktuell nichts läuft, denn noch eine Playliste/Radiostation in der Zone aktiv ist, bleibt die Zone stumm und die Playliste/Radiostation wird nur geladen.
 http://DEINE_IP/DEIN_VERZEICHNIS/index.php?zone=DEINE_ZONE&volume=30&action=sendmessage&messageid=1
 
 ## Spielt MP3 Datei mit jingle/gong vor der Durchsage
----------------------------------------
-## Stoppt gegenwärtig laufende Playliste/Radiostation, speichert die Lautstärke und Playliste/Radiostation, 
-## setzt die Lautstärke auf 40%, spielt vorher ein Jingle/Gong MP3 ab, spielt dann die Datei 1.mp3 die im Ordner 'messagepath' 
-## gespeichert ist, nach dem Abspielen wird die vorherige Playliste/Radiostation wieder geladen und mit der vorher gespeicherten 
-## Lautstärke wieder abgespielt.
-## Wenn aktuell nichts läuft, denn noch eine Playliste/Radiostation in der Zone aktiv ist, bleibt die Zone stumm
-## und die Playliste/Radiostation wird nur geladen.
+Stoppt gegenwärtig laufende Playliste/Radiostation, speichert die Lautstärke und Playliste/Radiostation, setzt die Lautstärke auf 40%, spielt vorher ein Jingle/Gong MP3 ab, spielt dann die Datei 1.mp3 die im Ordner 'messagepath' gespeichert ist, nach dem Abspielen wird die vorherige Playliste/Radiostation wieder geladen und mit der vorher gespeicherten Lautstärke wieder abgespielt. Wenn aktuell nichts läuft, denn noch eine Playliste/Radiostation in der Zone aktiv ist, bleibt die Zone stummund die Playliste/Radiostation wird nur geladen.
 http://DEINE_IP/DEIN_VERZEICHNIS/index.php?zone=DEINE_ZONE&volume=40&playgong=yes&action=sendmessage&messageid=1
 
 ## Spielt TTS Text ohne jingle/gong vor der Durchsage
----------------------------------------
-## Stoppt gegenwärtig laufende Playliste/Radiostation, speichert die Lautstärke und Playliste/Radiostation, 
-## setzt die Lautstärke auf 20%, wandelt dann den text in MP3 mit Hillfe von TTS um und 
-## spielt Sie ab, nach dem Abspielen wird die vorherige Playliste/Radiostation wieder geladen und mit der vorher gespeicherten 
-## Lautstärke wieder abgespielt.
-## Wenn aktuell nichts läuft, denn noch eine Playliste/Radiostation in der Zone aktiv ist, bleibt die Zone stumm
-## und die Playliste/Radiostation wird nur geladen.
-##
-## Für Loxone kann auch beim analagen Ausgangsbefehl der Parameter <v> für Durchsagen verwendet werden.
+Stoppt gegenwärtig laufende Playliste/Radiostation, speichert die Lautstärke und Playliste/Radiostation, setzt die Lautstärke auf 20%, wandelt dann den Text in MP3 mit Hilfe von TTS um und spielt Sie ab, nach dem Abspielen wird die vorherige Playliste/Radiostation wieder geladen und mit der vorher gespeicherten Lautstärke wieder abgespielt.
+Wenn aktuell nichts läuft, denn noch eine Playliste/Radiostation in der Zone aktiv ist, bleibt die Zone stumm und die Playliste/Radiostation wird nur geladen.
+
+## Für Loxone kann auch beim analogen Ausgangsbefehl der Parameter <v> für Durchsagen verwendet werden.
 http://DEINE_IP/DEIN_VERZEICHNIS/index.php?zone=DEINE_ZONE&volume=20&action=sendmessage&text=Dies ist ein Test
 
 ## Fügt der angegebenen Zone eine weitere hinzu
@@ -93,7 +78,7 @@ http://DEINE_IP/DEIN_VERZEICHNIS/index.php?zone=DEINE_ZONE&action=addmember&memb
 ## Löscht aus der Gruppe die angegebenen Zone wieder
 http://DEINE_IP/DEIN_VERZEICHNIS/index.php?zone=DEINE_ZONE&action=removemember&member=ANDERE_ZONE
 
-## Lädt die angegebene Sonos Playliste und spielt Sie mit Lautsärke 15% ab
+## Lädt die angegebene Sonos Playliste und spielt Sie mit Lautstärke 15% ab
 http://DEINE_IP/DEIN_VERZEICHNIS/index.php?zone=DEINE_ZONE&action=sonosplaylist&playlist=NAME_DER_PLAYLISTE&volume=15
 
 ## Lädt die angegebene Radioliste unter "Meine Radiosender" aus Sonos 
@@ -105,7 +90,7 @@ http://DEINE_IP/DEIN_VERZEICHNIS/index.php?zone=DEINE_ZONE&action=play&rampto=sl
 ## 1 schaltet Überblenden ein, 0 schaltet Überblenden aus
 http://DEINE_IP/DEIN_VERZEICHNIS/index.php?zone=DEINE_ZONE&action=crossfade&crossfade=1
 
-## Stopt alle Zonen
+## Stoppt alle Zonen
 http://DEINE_IP/DEIN_VERZEICHNIS/index.php?zone=DEINE_ZONE&action=stop&stopall
 
 ## Gruppiert alle Zonen
@@ -115,15 +100,14 @@ http://DEINE_IP/DEIN_VERZEICHNIS/index.php?zone=DEINE_ZONE&action=group
 http://DEINE_IP/DEIN_VERZEICHNIS/index.php?zone=DEINE_ZONE&action=ungroup
 
 ## weather-to-speech (in Verbindung mit wunderground.com [NUR API key benötigt])
-##
-## je nach Tageszeit werden unterschiedliche Wettervorhersagen erstellt und per TTS durchgegeben
-## Regenwahrscheinlichkeit und Windwarnung nur ab überschreiten von Grenzwerten (siehe config.php)
+
+je nach Tageszeit werden unterschiedliche Wettervorhersagen erstellt und per TTS durchgegeben
+Regenwahrscheinlichkeit und Windwarnung nur ab überschreiten von Grenzwerten (siehe config.php)
 ## Ansagetexte können in der Datei 'w2s.php' individualisiert werden (VORSICHT!!
 http://DEINE_IP/DEIN_VERZEICHNIS/index.php?zone=DEINE_ZONE&action=sendmessage&weather&volume=30
 
 ## clock-to-speech (Die Uhrzeit + Anrede werden über TTS ausgegeben )
-## 
-## Ansagetexte können in der Datei 'c2s.php' individualisiert werden (VORSICHT!!
+Ansagetexte können in der Datei 'c2s.php' individualisiert werden (VORSICHT!!
 http://DEINE_IP/DEIN_VERZEICHNIS/index.php?zone=DEINE_ZONE&action=sendmessage&clock&volume=20
 
 
@@ -155,9 +139,9 @@ etc.
 Titel und Interpret können jetzt auch getrennt in Loxone verwendet werden
 http://DEINE_IP/DEIN_VERZEICHNIS/index.php?zone=DEINE_ZONE&action=loxgettitel
 
-Der Text Eingangsverbinderfür die Kombination lautet: S-Titel<ZONE>
-Der Text Eingangsverbinderfür den Titel lautet: S-Titelinfo<ZONE>
-Der Text Eingangsverbinderfür den Interpret lautet: S-Interpretinfo<ZONE>
+Der Text Eingangsverbinder für die Kombination lautet: S-Titel<ZONE>
+Der Text Eingangsverbinder für den Titel lautet: S-Titelinfo<ZONE>
+Der Text Eingangsverbinder für den Interpret lautet: S-Interpretinfo<ZONE>
 
 
 
@@ -203,8 +187,7 @@ keine bekannten
 thanks to Stefan Nikolaus and Thomas Trautner for there coding
 
 ## Nächste Aktionen
-##
-## Erstellen von Gruppen basierend auf Auswahl der Zonen
-## mit anschließendem abspielen einer T2S und wiederherstellen des Ursprungszustandes
+Erstellen von Gruppen basierend auf Auswahl der Zonen
+mit anschließendem abspielen einer T2S und wiederherstellen des Ursprungszustandes
 
 *intensiveres Testen
