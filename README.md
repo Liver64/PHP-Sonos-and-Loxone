@@ -165,7 +165,7 @@ http://DEINE_IP/DEIN_VERZEICHNIS/index.php?zone=DEINE_ZONE&action=getgroupvolume
 http://DEINE_IP/DEIN_VERZEICHNIS/index.php?zone=DEINE_ZONE&action=setgroupvolume&volume=40
 
 ## Erhöht die jeweilige Lautstärke je Zone einer Gruppe um 20% (Master muss DEINE_ZONE sein)
-## ACHTUNG! Basierend auf derzeitiger Lautstärke wird LS um Wert x erhöht (könnte u.U. laut werden)
+ACHTUNG! Basierend auf derzeitiger Lautstärke wird LS um Wert x erhöht (könnte u.U. laut werden)
 http://DEINE_IP/DEIN_VERZEICHNIS/index.php?zone=DEINE_ZONE&action=setrelativegroupvolume&volume=20
 
 ## Nimmt die angegebene Zone aus einer Gruppe heraus
