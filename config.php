@@ -14,6 +14,7 @@
 # 1.1.3		Neue Parameter für weather-to-speech (w2s) und clock-to-speech (c2s)
 # 1.1.4		Neuer TTS Anbieter hinzugefügt
 # 1.1.5		Neue Parameter für Wartezeit bevor t2s abgespielt wird. (Zeile 147)
+# 1.1.6		Neuer TTS Anbeiter (OS X) hinzugefügt
 #
 # bekannte Probleme: derzeit keine
 # 
