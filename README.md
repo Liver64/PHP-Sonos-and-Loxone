@@ -13,7 +13,10 @@ Sicherstellen dass das Verzeichnis in dem die Skript Dateien liegen vom php fähi
 Die Konfiguration wird in der config.php durchgeführt. 
 Füge in der config.php deine Sonos Zonen inkl. IP-Adressen und auch deine gewünschten Radiostation hinzu.
 Der Pfad für die Nachrichten bzw. Text-To-Speech (TTS) Dateien muss für Sonos erreichbar sein.
-Für TTS benötigst du noch einen API-Key von VoicesRSS.org oder ivona.com
+Für TTS benötigst du noch einen API-Key von VoicesRSS.org oder ivona.com, alternativ kann auch Mac OS X verwendet werden.
+
+## TTS OSX
+Text-to-Speech kann auch ohne Cloud-Services mit Mac OS X umgesetzt werden. Hierzu empfiehlt es sich, die Server.app von Apple auf OS X installiert zu haben. Dieses Script kann direkt auf dem OS X Server als Website betrieben werden. Da der Mac nur AIFF Soundfiles erzeugt, die von SONOS nicht abgespielt werden können, benötigst du außerdem noch den LAME MP3 Encoder. Dieser lässt sich über Homebrew sehr einfach nach installieren.
 
 Unbedingt sicherstellen das dein Webserver User Schreibrechte für DEIN_VEREICHNIS besitzt.
 

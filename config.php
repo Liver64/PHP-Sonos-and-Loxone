@@ -22,10 +22,10 @@
 $config = array(
 	# Hier kommem die einzelnen Sonos Player rein "name_kleingeschrieben" => "IP Adresse des Players"
 	'sonoszone' => array(
-                'bad'      => '192.168.50.xxx',
-                'master'   => '192.168.50.xxx',
-                'schlafen' => '192.168.50.xxx',
-                'test'     => '192.168.50.xxx'
+                'bad'      => '192.168.15.107',
+                'buero'    => '192.168.15.112',
+                'schlafen' => '192.168.15.108',
+                'kueche'   => '192.168.15.118'
 		),
 	# Hier können eigene Radio Sender definiert werden, welche bei 'nextradio' oder 'prevradio' angesteuert werden
 	# 
@@ -50,7 +50,7 @@ $config = array(
 	# Text-to-Speech Parameter für VoiceRSS.org 
 	#---------------------------------------------------------------------------------------------------
 	# Hier deinen VoiceRSS.org API key einpflegen
-	'VoiceRSS_key'  => 'xxxxxxxxxxxxxxxxxxxxxxxxxxx',
+	'VoiceRSS_key'  => 'xxxxxxxxxxxxxxxxxx',
 
 	# Die Sprache für die VoiceRSS Engine festlegen
     'messageLangV'   => 'de-de',
@@ -72,24 +72,34 @@ $config = array(
 
 	# Standardstimme für T2s
 	'voice'    => 'Marlene', // 'Marlene' oder 'Hans'
+
+	####################################################################################################
+	# Text-to-Speech Parameter für Mac OS X
+	#---------------------------------------------------------------------------------------------------
+	# Pfad zum LAME MP3 Encoder
+	'lamePath'	=>	'/usr/local/bin/',
+	####################################################################################################
+
 	####################################################################################################
 	# Angabe welche TTS Engine benutzt werden soll:
 	#-- für VoiceRSS.org die '1001'
 	#-- für IVONA.com die '2001'
+	#-- für die OS X TTS-Engine die '3001'
 	# eingeben.
-	't2s_engine'	=> 2001,
+	't2s_engine'	=> 3001,
 	####################################################################################################
 
-	# Pfad zu deinem Speichermedium von dem Sonos die Nachrichen abspielt. Dieser muss über Netzwerkkennung erreichbar sein.
-    'messagespath'   => '//syn-ds415/music/tts/',	# Windows Backslash \\ und Slash \ in Pfadangaben durch // und / ersetzen ohne 											Slash am Ende
+	# Pfad zu deinem Speichermedium von dem Sonos die Nachrichen abspielt. Dieser UNC Pfad muss über die Netzwerkkennung erreichbar sein.
+    'messagespath'   => '//tts.wagner.local/sound',	
+    # Backslashes wie sie Windows verwendet (\\ und \) sind in den Pfadangaben durch Slashes (// und /) zu ersetzen. Am Ende des UNC Pfades darf sich kein Slash befinden.
 
 	# Pfad zu deinem Speichermedium an dem das Script das erhaltene MP3 file speichert. Dieser entspricht exakt
-	# dem 'messagespath', nur muss die Angabe hier nicht mit Netzwerk Kennung erfolgen, sondern den Regeln des localhost
+	# dem 'messagespath', nur muss die Angabe hier nicht mit Netzwerkkennung, sondern den Regeln des localhost
 	# Wer einen Pi als Webserver und eine NAS/externe Fesplatte nutzt muss hier sein mount Pfad angeben
 	#
 	# In dem Beispiel hier liegt das Script auf einer Synology mit dem Namen 'syn-ds415' und speichert die MP3 in den Unterordner tts im Ordner music.
 	# Bei messageStorePath muss der interne mount pfad für das o.g. Verzeichnis dann so angegeben werden, für Zugriff von Sonos aus dann der gleiche Pfad wie in Zeile 83.
-	'messageStorePath'   => '//volume1/music/tts/', 
+	'messageStorePath'   => '/sound/', 
 
 	# WICHIG, NICHT ÄNDERN: Datei Name der PHPSonos
     'filePhpSonos'  => 'PHPSonos.inc.php',
