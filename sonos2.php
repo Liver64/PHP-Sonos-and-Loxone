@@ -676,6 +676,9 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 				if ($config['t2s_engine'] === 1001) {
 					include_once("t2sv.php");
 					}
+				if ($config['t2s_engine'] === 3001) {
+					include_once("t2sx.php");
+					}
 				if ($config['t2s_engine'] === 2001) {
 					include_once("t2si.php");
 					if(!isset($_GET['voice'])) {
@@ -758,6 +761,9 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 			if (($messageid == '0') && ($fileo != '')) {
 				if ($config['t2s_engine'] === 1001) {
 					include_once("t2sv.php");
+				}
+				if ($config['t2s_engine'] === 3001) {
+					include_once("t2sx.php");
 				}
 				if ($config['t2s_engine'] === 2001) {
 					include_once("t2si.php");
@@ -1632,6 +1638,9 @@ global $text, $zonen, $messageid, $logging, $words, $voice, $accesskey, $secretk
 	if (($messageid == '0') && ($fileo != '')) {
 		if ($config['t2s_engine'] === 1001) {
 			include_once("t2sv.php");
+			}
+		if ($config['t2s_engine'] === 3001) {
+			include_once("t2sx.php");
 			}
 		if ($config['t2s_engine'] === 2001) {
 			include_once("t2si.php");

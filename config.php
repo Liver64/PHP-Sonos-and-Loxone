@@ -4,16 +4,17 @@
 #
 # Version: 		1.1.5
 # Datum: 		23.03.2016
-# veröffentlicht in forum: https://www.loxforum.com/
+# verÃ¶ffentlicht in forum: https://www.loxforum.com/
 # 
 # Historie:
 # ----------------------------------------------------------------------------------------------------------------------------
-# 1.0.0		Veröffentlichung des Skripts
-# 1.1.0		Neue Parameter hinzugefügt
-# 1.1.2		Minimum Lautstärke ab wann automatisch rampTo ausgeführt wird
-# 1.1.3		Neue Parameter für weather-to-speech (w2s) und clock-to-speech (c2s)
-# 1.1.4		Neuer TTS Anbieter hinzugefügt
-# 1.1.5		Neue Parameter für Wartezeit bevor t2s abgespielt wird. (Zeile 147)
+# 1.0.0		VerÃ¶ffentlichung des Skripts
+# 1.1.0		Neue Parameter hinzugefÃ¼gt
+# 1.1.2		Minimum LautstÃ¤rke ab wann automatisch rampTo ausgefÃ¼hrt wird
+# 1.1.3		Neue Parameter fÃ¼r weather-to-speech (w2s) und clock-to-speech (c2s)
+# 1.1.4		Neuer TTS Anbieter hinzugefÃ¼gt
+# 1.1.5		Neue Parameter fÃ¼r Wartezeit bevor t2s abgespielt wird. (Zeile 147)
+# 1.1.6		Neuer TTS Anbeiter (OS X) hinzugefÃ¼gt
 #
 # bekannte Probleme: derzeit keine
 # 
@@ -22,12 +23,11 @@
 $config = array(
 	# Hier kommem die einzelnen Sonos Player rein "name_kleingeschrieben" => "IP Adresse des Players"
 	'sonoszone' => array(
-                'bad'      => '192.168.50.xxx',
-                'master'   => '192.168.50.xxx',
-                'schlafen' => '192.168.50.xxx',
-                'test'     => '192.168.50.xxx'
+                'bad'      => '192.168.50.XXX',
+                'buero'    => '192.168.50.XXX',
+                'schlafen' => '192.168.50.XXX',
 		),
-	# Hier können eigene Radio Sender definiert werden, welche bei 'nextradio' oder 'prevradio' angesteuert werden
+	# Hier kÃ¶nnen eigene Radio Sender definiert werden, welche bei 'nextradio' oder 'prevradio' angesteuert werden
 	# 
 	# An der Stelle kommt nur der Stationsname rein.
 	'radio_name' => array ( "Radio FFH",
@@ -47,60 +47,70 @@ $config = array(
 				"x-rincon-mp3radio://1live-diggi.akacast.akamaistream.net/7/965/119435/v1/gnl.akacast.akamaistream.net/1live-diggi"
 				),
 	####################################################################################################
-	# Text-to-Speech Parameter für VoiceRSS.org 
+	# Text-to-Speech Parameter fÃ¼r VoiceRSS.org 
 	#---------------------------------------------------------------------------------------------------
 	# Hier deinen VoiceRSS.org API key einpflegen
-	'VoiceRSS_key'  => 'xxxxxxxxxxxxxxxxxxxxxxxxxxx',
+	'VoiceRSS_key'  => 'xxxxxxxxxxxxxxxxxx',
 
-	# Die Sprache für die VoiceRSS Engine festlegen
+	# Die Sprache fÃ¼r die VoiceRSS Engine festlegen
     'messageLangV'   => 'de-de',
 
-	# Den Qualität der MP3 Datei festlegen die VoiceRSS.org zurückschickt (die vorgegebene funktioniert)
+	# Den QualitÃ¤t der MP3 Datei festlegen die VoiceRSS.org zurÃ¼ckschickt (die vorgegebene funktioniert)
 	'audiocodec'    => '48khz_16bit_stereo',
 	####################################################################################################
 	
 	####################################################################################################
-	# Text-to-Speech Parameter für IVONA.com 
+	# Text-to-Speech Parameter fÃ¼r IVONA.com 
 	#---------------------------------------------------------------------------------------------------
 	# Hier deinen IVONA Access key einpflegen
 	'access_key'  => 'xxxxxxxxxxxxxxxxxx',
 	# Hier deinen IVONA Secret key einpflegen
 	'secret_key'  => 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
 
-	# Die Sprache für die IVONA Engine festlegen
-    'messageLangI'   => 'de-DE',
+	# Die Sprache fÃ¼r die IVONA Engine festlegen
+    	'messageLangI'   => 'de-DE',
 
-	# Standardstimme für T2s
+	# Standardstimme fÃ¼r T2s
 	'voice'    => 'Marlene', // 'Marlene' oder 'Hans'
+
+	####################################################################################################
+	# Text-to-Speech Parameter fÃ¼r Mac OS X
+	#---------------------------------------------------------------------------------------------------
+	# Pfad zum LAME MP3 Encoder
+	'lamePath'	=>	'/usr/local/bin/',
+	####################################################################################################
+
 	####################################################################################################
 	# Angabe welche TTS Engine benutzt werden soll:
-	#-- für VoiceRSS.org die '1001'
-	#-- für IVONA.com die '2001'
+	#-- fÃ¼r VoiceRSS.org die '1001'
+	#-- fÃ¼r IVONA.com die '2001'
+	#-- fÃ¼r die OS X TTS-Engine die '3001'
 	# eingeben.
-	't2s_engine'	=> 2001,
+	't2s_engine'	=> 3001,
 	####################################################################################################
 
-	# Pfad zu deinem Speichermedium von dem Sonos die Nachrichen abspielt. Dieser muss über Netzwerkkennung erreichbar sein.
-    'messagespath'   => '//syn-ds415/music/tts/',	# Windows Backslash \\ und Slash \ in Pfadangaben durch // und / ersetzen ohne 											Slash am Ende
+	# Pfad zu deinem Speichermedium von dem Sonos die Nachrichen abspielt. Dieser UNC Pfad muss Ã¼ber die Netzwerkkennung erreichbar sein.
+    	'messagespath'   => '//syn-ds415/music/tts/',	
+    	# Backslashes wie sie Windows verwendet (\\ und \) sind in den Pfadangaben durch Slashes (// und /) zu ersetzen. Am Ende des UNC Pfades darf sich kein Slash befinden.
 
 	# Pfad zu deinem Speichermedium an dem das Script das erhaltene MP3 file speichert. Dieser entspricht exakt
-	# dem 'messagespath', nur muss die Angabe hier nicht mit Netzwerk Kennung erfolgen, sondern den Regeln des localhost
+	# dem 'messagespath', nur muss die Angabe hier nicht mit Netzwerkkennung, sondern den Regeln des localhost
 	# Wer einen Pi als Webserver und eine NAS/externe Fesplatte nutzt muss hier sein mount Pfad angeben
 	#
 	# In dem Beispiel hier liegt das Script auf einer Synology mit dem Namen 'syn-ds415' und speichert die MP3 in den Unterordner tts im Ordner music.
-	# Bei messageStorePath muss der interne mount pfad für das o.g. Verzeichnis dann so angegeben werden, für Zugriff von Sonos aus dann der gleiche Pfad wie in Zeile 83.
+	# Bei messageStorePath muss der interne mount pfad fÃ¼r das o.g. Verzeichnis dann so angegeben werden, fÃ¼r Zugriff von Sonos aus dann der gleiche Pfad wie in Zeile 83.
 	'messageStorePath'   => '//volume1/music/tts/', 
 
-	# WICHIG, NICHT ÄNDERN: Datei Name der PHPSonos
-    'filePhpSonos'  => 'PHPSonos.inc.php',
+	# WICHIG, NICHT Ã„NDERN: Datei Name der PHPSonos
+    	'filePhpSonos'  => 'PHPSonos.inc.php',
 
-	# Parameter ob Logging für Sonos genutzt werden soll
+	# Parameter ob Logging fÃ¼r Sonos genutzt werden soll
 	'logging'       => true,
 
-	# Falls Logging genutzt wird hier den gewünschten Dateinamen eintragen
-    'logfile'       => 'sonoslog.txt',
+	# Falls Logging genutzt wird hier den gewÃ¼nschten Dateinamen eintragen
+    	'logfile'       => 'sonoslog.txt',
 
-	# Vorgabe Werte für die Funktion Laustärkeneinstellung 'volumeup' and 'volumedown' in Prozent
+	# Vorgabe Werte fÃ¼r die Funktion LaustÃ¤rkeneinstellung 'volumeup' and 'volumedown' in Prozent
 	'volumeup'      => '3',
 	'volumedown'    => '3',
 
@@ -120,33 +130,33 @@ $config = array(
 	'LoxUser' 	=> 'xxxxxxx',
 	'LoxPassword'	=> 'xxxxxxxxx',
 	
-	# Sollen Daten zur Loxone geschickt werden (Titel/Interpret, Lautstärke, Mute Status, Play Status sind möglich)
+	# Sollen Daten zur Loxone geschickt werden (Titel/Interpret, LautstÃ¤rke, Mute Status, Play Status sind mÃ¶glich)
 	'LoxDaten' => true,
 
-	# Standardlautstärke wenn nichts anderes mit angegeben wurde
+	# StandardlautstÃ¤rke wenn nichts anderes mit angegeben wurde
 	'stdvolume' 	=> '40',
 
-	# Standardlautstärke für Durchsagen wenn nichts anderes angegeben wurde
+	# StandardlautstÃ¤rke fÃ¼r Durchsagen wenn nichts anderes angegeben wurde
 	'messagevolume' => '35',
 
-	# Einstellungen zu Lautstärke
-	# Hier ist es möglich unterschiedliche Arten des Ansteigen der Lautstärke zu definieren
-	# z.B. sleep - für den Wecker / Musik morgens, damit dieser langsamm lauter wird
+	# Einstellungen zu LautstÃ¤rke
+	# Hier ist es mÃ¶glich unterschiedliche Arten des Ansteigen der LautstÃ¤rke zu definieren
+	# z.B. sleep - fÃ¼r den Wecker / Musik morgens, damit dieser langsamm lauter wird
 	#
-	# 	"sleep" 	- von aktueller Lautstärke auf die Ziel Lautstärke ändernd, fest eingestellt in 17 Sekunden.
-	#	"alarm" 	- von 0 auf die Ziel Lautstärke ansteigend.
-	#	"auto" 	- von 0 auf die Ziel Lautstärke ansteigend, sehr schnell und gleichmäßig.
+	# 	"sleep" 	- von aktueller LautstÃ¤rke auf die Ziel LautstÃ¤rke Ã¤ndernd, fest eingestellt in 17 Sekunden.
+	#	"alarm" 	- von 0 auf die Ziel LautstÃ¤rke ansteigend.
+	#	"auto" 	- von 0 auf die Ziel LautstÃ¤rke ansteigend, sehr schnell und gleichmÃ¤ÃŸig.
 	#
-	# Standard für den Befehl Play wenn der Parameter rampto in der Syntax nicht angegeben wurde.
+	# Standard fÃ¼r den Befehl Play wenn der Parameter rampto in der Syntax nicht angegeben wurde.
 	'rampto' => 'alarm',
-	# Lautstärke in Prozent ab wann 'rampto' OHNE explizite Angabe genutzt werden soll, ansonsen geht es mit eingestellter Lautstärke weiter
-	# gilt für folgende Funktionen: play, nextradio, previousradio, playqueue, sonosplaylist, radioplaylist
+	# LautstÃ¤rke in Prozent ab wann 'rampto' OHNE explizite Angabe genutzt werden soll, ansonsen geht es mit eingestellter LautstÃ¤rke weiter
+	# gilt fÃ¼r folgende Funktionen: play, nextradio, previousradio, playqueue, sonosplaylist, radioplaylist
 	'volrampto' => '35',
-	# Parameter der angibt ob vor dem Abspielen einer t2s langsam (ca. 10 Sekunden) oder abrupt die Lautstärke runtergeregelt wird
+	# Parameter der angibt ob vor dem Abspielen einer t2s langsam (ca. 10 Sekunden) oder abrupt die LautstÃ¤rke runtergeregelt wird
 	# Bitte Parameter sleeptimegong beachten bei false.
 	'rampsleep' => true,  // false = abruptes stoppen. 
 
-	# Parameter für Fritzbox Integration --> Noch nicht aktiv
+	# Parameter fÃ¼r Fritzbox Integration --> Noch nicht aktiv
 	######################################################################
 
 	'fritzboxip'  	=> '192.168.50.xx',
@@ -156,14 +166,14 @@ $config = array(
 	'rufumleitung3'	=> '016387581yyy',
 	######################################################################
 
-	# Parameter für Wunderground w2s Integration
+	# Parameter fÃ¼r Wunderground w2s Integration
 	######################################################################
 	# Token bei http://deutsch.wunderground.com/weather/api/ anfordern
-	# Gültigen Wunderground API key einfügen
+	# GÃ¼ltigen Wunderground API key einfÃ¼gen
 	'wgkey'		=> 'xxxxxxxxxxxxxx',
-	# Lässt sich mittels Funktion geolookup und Längen-/Breitengrad ermitteln. Siehe auch Dokumentation der API
+	# LÃ¤sst sich mittels Funktion geolookup und LÃ¤ngen-/Breitengrad ermitteln. Siehe auch Dokumentation der API
 	'wgcity' 		=> 'xxxxxxxxxxx',
-	# Wird der Schwellwert überschritten erfolgt die Sprachausgabe für Wind km/h oder Regen (% Regenwahrscheinlichkeit)
+	# Wird der Schwellwert Ã¼berschritten erfolgt die Sprachausgabe fÃ¼r Wind km/h oder Regen (% Regenwahrscheinlichkeit)
 	'wgwindschwelle'	=> '20', // km/h
 	'wgregenschwelle'	=> '25', // in Prozent
 	######################################################################	

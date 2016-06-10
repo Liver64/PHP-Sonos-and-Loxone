@@ -1,0 +1,80 @@
+2016-06-08 17:54:15 - Fehler: [8], Undefined variable: lamePath in /Users/patrickwagner/PHP-Sonos-and-Loxone/t2sx.php in line 15, Variable:Array
+(
+    [messageid] => 0
+    [words] => Guten Abend. Es ist jetzt 17 Uhr und 54 Minuten.
+    [config] => Array
+        (
+            [sonoszone] => Array
+                (
+                    [bad] => 192.168.15.107
+                    [buero] => 192.168.15.112
+                    [schlafen] => 192.168.15.108
+                    [kueche] => 192.168.15.118
+                )
+
+            [radio_name] => Array
+                (
+                    [0] => Radio FFH
+                    [1] => SWR3
+                    [2] => You FM
+                    [3] => P4 Norge
+                    [4] => FM Jammin 181
+                    [5] => 1 Live
+                )
+
+            [radio_adresse] => Array
+                (
+                    [0] => x-rincon-mp3radio://ndr-ndr1-han-mp3.akacast.akamaistream.net/7/807/273766/v1/gnl.akacast.akamaistream.net/ndr_ndr1_han_mp3
+                    [1] => x-rincon-mp3radio://swr-mp3-m-swr3.akacast.akamaistream.net/7/720/137136/v1/gnl.akacast.akamaistream.net/swr-mp3-m-swr3
+                    [2] => x-rincon-mp3radio://hr-mp3-m-youfm.akacast.akamaistream.net/7/246/142136/v1/gnl.akacast.akamaistream.net/hr-mp3-m-youfm
+                    [3] => aac://mms-live.online.no/p4_norge
+                    [4] => x-rincon-mp3radio://relay3.181.fm:14042
+                    [5] => x-rincon-mp3radio://1live-diggi.akacast.akamaistream.net/7/965/119435/v1/gnl.akacast.akamaistream.net/1live-diggi
+                )
+
+            [VoiceRSS_key] => xxxxxxxxxxxxxxxxxx
+            [messageLangV] => de-de
+            [audiocodec] => 48khz_16bit_stereo
+            [access_key] => xxxxxxxxxxxxxxxxxx
+            [secret_key] => xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+            [messageLangI] => de-DE
+            [voice] => Marlene
+            [lamePath] => /usr/local/bin/
+            [t2s_engine] => 3001
+            [messagespath] => //tts.wagner.local/sound
+            [messageStorePath] => /sound/
+            [filePhpSonos] => PHPSonos.inc.php
+            [logging] => 1
+            [logfile] => sonoslog.txt
+            [volumeup] => 3
+            [volumedown] => 3
+            [sleeptimegong] => 1
+            [file_gong] => 2_Airport_gong
+            [LoxIP] => 192.168.50.xxx:80
+            [LoxUser] => xxxxxxx
+            [LoxPassword] => xxxxxxxxx
+            [LoxDaten] => 1
+            [stdvolume] => 40
+            [messagevolume] => 35
+            [rampto] => ALARM_RAMP_TYPE
+            [volrampto] => 35
+            [rampsleep] => 1
+            [fritzboxip] => 192.168.50.xx
+            [fritzboxpw] => xxxxxxxxxx
+            [rufumleitung1] => 017664067xxx
+            [rufumleitung2] => 017664067xxx
+            [rufumleitung3] => 016387581yyy
+            [wgkey] => xxxxxxxxxxxxxx
+            [wgcity] => xxxxxxxxxxx
+            [wgwindschwelle] => 20
+            [wgregenschwelle] => 25
+            [debuggen] => 1
+        )
+
+    [fileolang] => 0fb5e884a9c246c8dedf21063058f32e
+    [ttskey] => xxxxxxxxxxxxxxxxxx
+    [ttslanguage] => de-de
+    [ttsaudiocodec] => 48khz_16bit_stereo
+    [messageStorePath] => /sound/
+)
+
