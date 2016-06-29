@@ -4,7 +4,7 @@ function t2s($messageid)
 // @Parameter = $messageid von sonos2.php
 {
 	#echo "bin in der t2sx.php angekommen\n";
-	global $words, $config, $messageid, $fileolang;
+	global $words, $config, $messageid, $fileolang, $fileo;
 
 		$ttskey = $config['VoiceRSS_key'];
 		$ttslanguage = $config['messageLangV'];

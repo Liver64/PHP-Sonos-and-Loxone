@@ -7,7 +7,7 @@ function t2s($messageid)
 {
 	set_include_path(__DIR__ . '/ivona_tts');
 	
-	global $messageid, $words, $filename, $fileolang, $voice, $accesskey, $secretkey;
+	global $messageid, $words, $filename, $fileolang, $voice, $accesskey, $secretkey, $fileo;
 		include 'ivona_tts.php';
 		include 'config.php';
 		
@@ -15,13 +15,13 @@ function t2s($messageid)
 		$language = $config['messageLangI'];
 		$path = $config['messageStorePath'];
 		
-		####################################################################
-		# zu testen da auf Google Translate basierend
+		#####################################################################################################################
+		# zu testen da auf Google Translate basierend (urlencode)
 		# ersetzt Umlaute um die Sprachqualität zu verbessern
-		# $search = array('ä','ü','ö','Ä','Ü','Ö','ß','°','%20','%C3%84','%C4','%C3%9C','%FC','%C3%9','%F6','%C3%9F');
-		# $replace = array('ae','ue','oe','Ae','Ue','Oe','ss','Grad',' ','Ae','ae','Ue','ue','Oe','oe','ss');
+		# $search = array('ä','ü','ö','Ä','Ü','Ö','ß','°','%20','%C3%84','%C4','%C3%9C','%FC','%C3%96','%F6','%DF','%C3%9F');
+		# $replace = array('ae','ue','oe','Ae','Ue','Oe','ss','Grad',' ','ae','ae','ue','ue','oe','oe','ss','ss');
 		# $words = str_replace($search,$replace,$words);
-		####################################################################
+		#####################################################################################################################
 		
 		#-- Aufruf der IVONA Class zum generieren der t2s --
 		$a = new IVONA_TTS(); 

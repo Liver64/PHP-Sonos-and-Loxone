@@ -22,8 +22,8 @@ function s2s($text)
 		if(!empty($temp["duration"])) {
 			# Generiert Titelinfo wenn MP3 läuft
 			$artist = substr($temp["artist"], 0, 30);
-			$titel = substr($temp["title"], 0, 70);
-		} elseif(empty($temp["duration"])) {
+			$title = substr($temp["title"], 0, 30);
+		} else {
 		# Generiert Titelinfo wenn Radio läuft
 			$value = substr($temp["streamContent"], 0, 70); // Titel und Interpret der Radio Playliste
 			# Teilt den Stream beim Bindestrich in 2 Werte
@@ -32,7 +32,7 @@ function s2s($text)
 			$titel = substr($titelartist[1], 1, 50); // erstes Leerzeichen nach Trennung abschneiden;
 			# Falls keine Titel / Artist Info verfügbar abbrechen
 			if($titelartist[1] == '') {
-				$text = 'keine Info';
+			$text = 'keine Info';
 			}
 		}
 		# Erstellen des Strings zur Übergabe an TTS

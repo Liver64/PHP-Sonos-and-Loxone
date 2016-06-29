@@ -2,8 +2,8 @@
 
 ##############################################################################################################################
 #
-# Version: 	1.4.9
-# Datum: 	03.06.2016
+# Version: 	1.5.1
+# Datum: 	23.06.2016
 # veröffentlicht in forum: https://www.loxforum.com/
 # 
 # Historie:
@@ -19,8 +19,6 @@
 #						dann in der config.php zu der Radioliste hinzuzufügen.
 #						rampto // Anpassung der Art der Lautstärkeregelung bei Play (3 Varianten möglich)
 #
-#						Desweiteren neue Parameter in der config.php:
-#						stdvolume // Standardlautsäärke wenn nichts anderes mit angegeben wurde
 #						messagevolume // Standardlautstärke für Durchsagen wenn nichts anderes angegeben wurde
 #						rampto // Standard für den Befehl Play wenn der Parameter rampto in der Syntax nicht 
 #						angegeben wurde.
@@ -75,19 +73,28 @@
 #			- setrelativegroupvolume = Erhöht für eine Gruppe die angegebene Laustärke relativ in Prozent je Zone. ACHTUNG! vorheriges Lautstärkeverhältnis beachten!
 #			- becomegroupcoordinator = Nimmt angegebene Zone aus einer Gruppe heraus
 #			- Sleeptimer = Ausschaltverzögerung in Minuten (1-59 Minuten möglich)
-#	
-#
+# 1.5.0		Offline Mac basierende T2S Engine hinzugefügt (danke schön an Patrick (patriwag))
+# 1.5.1		Erstellen von Gruppen bzw. auflösen einzelner Zonen basierend auf Auswahl der Zonen. Die jeweiligen Zonen müssen mit einem Komma aufgelistet werden, falls nur eine Zone dann ohne Komma
+#			- addmember erstellt basierend auf der Auswahl von Zonen eine Gruppe. 
+#			- removemember löscht die angegeben(n) Zone(n) aus einer bestehenden Gruppe. 
+#			max. Scriptlaufzeit auf 120 Sekunden erhöht
+#			Neue Funktion um eine T2S an eine Gruppe zu schicken. Vorher wird je Zone der Zustand gespeichert, dann die gewünschten Zonen
+#			gruppiert, die t2s in gewünschter Lautstärke je Zone (siehe config.php) abgespielt und zum Schluß wieder der Originalzustand jeder Zone hergestellt.
+# 			- sendgroupmessage 
+#			Zusätzlich gibt es am Ende der Syntax den Parameter "groupvolume", der die Volume default Werte aus der config.php um den angegebenen Prozentwert erhöht.
+#			- groupsonosplaylist = spielt eine Sonos Playliste in einer Gruppe von Zonen ab	 (analog zu sonosplaylist für einzelne Zone)
+#			- groupradioplaylist = spielt einen ausgewählten Radiosender in einer Gruppe von Zonen ab (analog zu radioplaylist für einzelne Zone)
+#			
 # bekannte Probleme:	derzeit keine
 # 						
-# geplante Funktionen: 	- Erstellen von Gruppen basierend auf Auswahl der Zonen
-#						- mit anschließendem abspielen einer T2S und wiederherstellen des Ursprungszustandes
+# geplante Funktionen: 	
 #
 #
 ######## Script Code (ab hier bitte nichts ändern) ###################################
 
-ini_set('max_execution_time', 90); // Max. Skriptlaufzeit auf 90 Sekunden
+ini_set('max_execution_time', 120); // Max. Skriptlaufzeit auf 120 Sekunden
 
-include("PHPSonos.inc.php");
+include("PHPSonos.php");
 include "config.php";
 
 set_error_handler("customError");
@@ -98,14 +105,14 @@ if($debug == 1) {
 	# include ("mp3info.php"); 
 	}
 	
- #-- Prüfen ob das Verzeichnis 'log' vorhanden ist, falls nicht mit Rechte 0777 erstellen ---------------
+ // Prüfen ob das Verzeichnis 'log' vorhanden ist, falls nicht mit Rechte 0777 erstellen
  $path = "log";
  if (is_dir($path)) { 
  } else { 
  mkdir ($path, 0777); 
  } 
  
- #--  Übernahme von Variablen aus config.php  ------------------------------------------
+ // Übernahme und Deklaration von Variablen aus config.php
 $sonoszone = $config['sonoszone'];
 $loxip = $config['LoxIP'];
 $loxuser = $config['LoxUser'];
@@ -113,9 +120,22 @@ $loxpassword = $config['LoxPassword'];
 $log = $config['logging'];
 
 
- #-- Error handling (erstellt error log datei)	
+// prüft ob Zeitzonen Server/PHP identisch sind und korrigert ggf.
+$script_tz = date_default_timezone_get();
+
+if (strcmp($script_tz, ini_get('date.timezone'))){
+	date_default_timezone_set('Europe/Berlin');
+	echo 'Die Script-Zeitzone unterschied sich von der ini-set Zeitzone und wurde angepasst.'."<br>"."<br>";
+} else {
+	if($debug == 1) {
+		echo 'Die Script-Zeitzone und die ini-set Zeitzone stimmen überein.'."<br>"."<br>";
+	}
+}
+
+
+// Error handling (erstellt error log datei)	
  function customError($errno, $errstr, $errfile, $errline, $errcontext){
- 	global $path, $loxuser, $loxpassword, $loxip, $zonen;
+ 	global $path, $loxuser, $loxpassword, $loxip, $master;
 	$message = date("Y-m-d H:i:s - ");
 	$message .= "Fehler: [" . $errno ."], " . "$errstr in $errfile in line $errline, ";
 	$message .= "Variable:" . print_r($errcontext, true) . "\r\n";
@@ -125,13 +145,17 @@ $log = $config['logging'];
 	$handle = @fopen("http://$loxuser:$loxpassword@$loxip/dev/sps/io/S-Error/$ErrorS", "r");
 	#--------------------------------------------------------------------------------------------
 	die("Ein Fehler trat auf. Bitte Datei /".$path."/sonos_error.log pruefen.");
- }
- #-------------------------------------
+	}
+#------------------------------------------------------------------------------------------------
  
+ 
+# Start des Srcipts
 if(isset($_GET['volume']) && is_numeric($_GET['volume']) && $_GET['volume'] >= 0 && $_GET['volume'] <= 100) {
 	$volume = $_GET['volume'];
-	} else {
-	$volume = $config['stdvolume'];
+} else {
+	$master = $_GET['zone'];
+	$sonos = new PHPSonos($sonoszone[$master][0]); //Sonos IP Adresse
+	$volume = $config['sonoszone'][$master][2];
 }
 
 if(isset($_GET['rampto'])) {
@@ -161,9 +185,9 @@ if(isset($_GET['rampto'])) {
 	}
 
 if(array_key_exists($_GET['zone'], $sonoszone)){ 
-	$zonen = $_GET['zone'];
-	$sonos = new PHPSonos($sonoszone[$zonen]); //Sonos IPAdresse
-
+	$master = $_GET['zone'];
+	$sonos = new PHPSonos($sonoszone[$master][0]); //Sonos IP Adresse
+	
 	switch($_GET['action'])	{
 		case 'play';
 			if(count($sonos->GetCurrentPlaylist()) > 0) { 
@@ -296,7 +320,7 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 			$playlistgesammt = count($sonos->GetCurrentPlaylist());
 						
 			if ($titelaktuel < $playlistgesammt) {
-			$sonos->SetQueue("x-rincon-queue:" . getRINCON($sonoszone[$zonen]) . "#0");
+			$sonos->SetQueue("x-rincon-queue:" . getRINCON($sonoszone[$master][0]) . "#0");
 				if($sonos->GetVolume() <= $config['volrampto'])	{
 					$sonos->RampToVolume($config['rampto'], $volume);
 					$sonos->Play();
@@ -310,7 +334,7 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 			break;
 		
 		case 'clearqueue':
-				$sonos->SetQueue("x-rincon-queue:" . getRINCON($sonoszone[$zonen]) . "#0");
+				$sonos->SetQueue("x-rincon-queue:" . getRINCON($sonoszone[$master][0]) . "#0");
 				$sonos->ClearQueue();
 				logging();
 			break;  
@@ -342,6 +366,7 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 			}
 			break;   
 
+			
 		case 'setloudness':
 			if(($_GET['loudness'] == 1) || ($_GET['loudness'] == 0)) {
 				$loud = $_GET['loudness'];
@@ -351,14 +376,18 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 			}    
 		break;
 		
+		
 		case 'settreble':
 			$Treble = $_GET['treble'];
 			$sonos->SetTreble($Treble);
 		break;
 		
-		case 'creategroup':
-			creategroup();
-		break;
+		
+		case 'setbass':
+			$Bass = $_GET['bass'];
+			$sonos->SetBass($Bass);
+		break;	
+		
 		
 		case 'setbass':
 			$Bass = $_GET['bass'];
@@ -367,65 +396,17 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 
 		
 		case 'addmember':
-			if ($debug == 1) {
-				echo debug();
-				echo "<pre>";
-				echo "Member IP: " . $sonoszone[$_GET['member']] . "<br>";
-				echo "Member RINCON: " . getRINCON($sonoszone[$_GET['member']]). "<br>";
-				echo "</pre>";
-			}
-			if(isset($_GET['member'])) {
-				$AddMember = $sonos->AddMember(getRINCON($sonoszone[$_GET['member']])); # Member Rincon
-				$sonos = new PHPSonos($sonoszone[$_GET['member']]); //Slave Sonos ZP IPAddress
-				$ret = $sonos->SetAVTransportURI("x-rincon:" . getRINCON($sonoszone[$zonen])); // Master Sonos ZP IPAddress
-				logging();
-			} else {
-				die('Die angegebene Zone konnte nicht gefunden werden.');
-			}
-			if($debug==1) {			
-				echo zonenmaster($_GET['member']);
-			}
-		  break;
+			$member = $_GET['member'];
+			$group = creategroup($member);
+		break;
 
-		# Hinzugefügt (nicht getestet)
-		case 'removemembernew':
 		
-			if(isset($_GET['member'])) {
-				$sonos = new PHPSonos($sonoszone[$_GET['member']]);
-				$MemberID = getRINCON($sonoszone[$_GET['member']]);
-				echo "RinconID: " . $MemberID;
-				$sonos->RemoveMember($MemberID);
-			} else {
-				die('Die Member-Zone konnte nicht gefunden werden.');
-			}
-		break;		
-
 		case 'removemember':
-			if(isset($_GET['member'])) {
-				if($debug ==1) {
-					echo "zonen: " . $zonen . "<br>";
-					echo "member: " . $_GET['member'] . "<br>";
-				}
-				# wenn Member gleich Zone ist 
-				if ($zonen == $_GET['member']) {
-					die("Der Master kann sich nicht selber entfernen.");
-				}
-				# nachschauen ob die Zone überhaupt verbunden ist
-				$master = zonenmaster($_GET['member']);
-				
-				if (isset($master)) {
-				#	$RemoveMember = $sonos->RemoveMember(getRINCON($sonoszone[$_GET['member']])); # Member Rincon
-					$sonos = new PHPSonos($sonoszone[$_GET['member']]); //Slave Sonos ZP IPAddress
-					$sonos->SetAVTransportURI("");
-					logging();
-				} else {
-					die("Der Player ist nicht mit dem Master verbunden.");
-				}
-			} else  {
-				die('Die Zone konnte nicht gefunden werden.');
-			}
-			break;
+			$member = $_GET['member'];
+			$group = removegroup($member);
+		break;
 		  
+		
 		case 'nextradio':
 			$playstatus = $sonos->GetTransportInfo();
 			$radiovolume = $sonos->GetVolume();
@@ -489,51 +470,18 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 				  
 		case 'sonosplaylist':
 			logging();
-			if($debug == 1) {
-				echo $sonoszone[$zonen] . "<br>";
-				echo getRINCON($sonoszone[$zonen]) . "<br>";	
-			}
-			if(isset($_GET['playlist'])) {
-				$sonos->SetQueue("x-rincon-queue:" . getRINCON($sonoszone[$zonen]) . "#0"); 
-				$playlist = $_GET['playlist'];
-			} else {
-			  die ("Keine Playliste mit dem angegebenen Namen gefunden.");
-			}
+			groupplaylist();
+		break;
+		  
 		
-		# Sonos Playlist ermitteln und mit übergebene vergleichen	
-		$sonoslists=$sonos->GetSONOSPlaylists();
-		$pleinzeln = 0;
-		while ( $pleinzeln < count($sonoslists) ) {
-			if ($debug == 1) {
-					echo "Playlist " . $pleinzeln . "<br>\n\n";
-					echo "ID: " . $sonoslists[$pleinzeln]["id"] . "<br>\n";
-					echo "Titel: " . $sonoslists[$pleinzeln]["title"] . "<br>\n";
-					echo "Typ: " . $sonoslists[$pleinzeln]["typ"] . "<br>\n";
-					echo "File: " . $sonoslists[$pleinzeln]["file"] . "<br>\n";
-					echo urldecode($sonoslists[$pleinzeln]["file"]) . "<br>\n";
-					# echo "ausgewählte Liste: " . $liste . "<br>\n";
-					echo "<br>\n";
-				}
-				if($playlist == $sonoslists[$pleinzeln]["title"]) {
-					$plfile = urldecode($sonoslists[$pleinzeln]["file"]);
-					$sonos->ClearQueue();
-					$sonos->AddToQueue($plfile); //Datei hinzufügen
-					$sonos->SetQueue("x-rincon-queue:". getRINCON($sonoszone[$zonen]) ."#0"); 
-					if($sonos->GetVolume() <= $config['volrampto'])
-				{
-					$sonos->RampToVolume($config['rampto'], $volume);
-					$sonos->Play();
-				} else {
-					$sonos->Play();
-				}
-					$gefunden = 1;
-				}
-				$pleinzeln++;
-				if (($pleinzeln == count($sonoslists) ) && ($gefunden != 1)) {
-					die("Keine Playliste mit dem angegebenen Namen gefunden.");
-				}
-			}			
-		  break;
+		case 'groupsonosplaylist':
+			global $membermaster, $debug, $sonos;
+			logging();
+			$master = $_GET['zone'];
+			$groupvol = "1";
+			groupplaylist();
+			creategroup($membermaster, $groupvol);
+		break;
 
 		case 'radioplaylist':
 			logging();
@@ -581,6 +529,110 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 			}
 		break;
 		
+		
+		case 'groupradioplaylist': // funktioniert nicht
+			global $member, $debug, $sonos;
+			logging();
+			$master = $_GET['zone'];
+			$groupvol = "1";
+			groupradioplaylist();
+			creategroup($member, $groupvol);
+		break;
+		
+		
+		case 'info':
+      		 $PositionInfo = $sonos->GetPositionInfo();
+			 $GetMediaInfo = $sonos->GetMediaInfo();
+			 $radio = $sonos->RadiotimeGetNowPlaying();
+
+			 $title = $PositionInfo["title"];
+			 $album = $PositionInfo["album"];
+			 $artist = $PositionInfo["artist"];
+			 $albumartist = $PositionInfo["albumArtist"];
+			 $reltime = $PositionInfo["RelTime"];
+			 $bild = $PositionInfo["albumArtURI"];
+			 $streamContent = $PositionInfo["streamContent"];
+			 if($sonos->GetTransportInfo() == 1 )  {
+				# Play
+				$status = 'Play';
+			 } else {
+				# Pause
+				$status = 'Pause';
+			 }  
+			 if($PositionInfo["albumArtURI"] == '')  {
+				# Kein Cover - Dann Radio Cover
+				$bild = $radio["logo"];
+			 }
+			 if($PositionInfo["albumArtURI"] == '')  {
+				# Kein Title - Dann Radio Title
+				$title = $GetMediaInfo["title"];
+			 }   
+			 if($PositionInfo["album"] == '')  {
+				# Kein Album - Dann Radio Stream Info
+				$album = $PositionInfo["streamContent"];
+			 }   
+			 echo'
+				  cover<tab>' . $bild . '<br>   
+				  title<tab>' . $title . '<br>
+				  album<tab>' . $album . '<br>
+				  artist<tab>' . $artist . '<br>
+				  time<tab>' . $reltime . '<br>
+				  status<tab>' . $status . '<br>
+				';
+		break;
+      
+    
+		case 'cover':
+			$PositionInfo = $sonos->GetPositionInfo();
+			$radio = $sonos->RadiotimeGetNowPlaying();
+			$bild = $PositionInfo["albumArtURI"];
+			if($PositionInfo["albumArtURI"] == '')  {
+				# Kein Cover - Dann Radio Cover
+				$bild = $radio["logo"];
+			}
+			echo' ' . $bild . ' ';
+		break;   
+		
+		
+		case 'title':
+			$PositionInfo = $sonos->GetPositionInfo();
+			$GetMediaInfo = $sonos->GetMediaInfo();
+			$radio = $sonos->RadiotimeGetNowPlaying();
+			$title = $PositionInfo["title"];
+			if($PositionInfo["albumArtURI"] == '')  {
+				# Kein Title - Dann Radio Title
+				$title = $GetMediaInfo["title"];
+			}
+			echo' ' . $title . ' ';
+		break;   
+			 
+		
+		case 'artist':
+			$PositionInfo = $sonos->GetPositionInfo();
+			$GetMediaInfo = $sonos->GetMediaInfo();
+			$title = $PositionInfo["title"];
+			$album = $PositionInfo["album"];
+			$artist = $PositionInfo["artist"];
+			$albumartist = $PositionInfo["albumArtist"];
+			$reltime = $PositionInfo["RelTime"];
+			$bild = $PositionInfo["albumArtURI"];
+			echo' ' . $artist . ' ';      
+		break;   
+		
+			 
+		case 'album':
+			$PositionInfo = $sonos->GetPositionInfo();
+			$GetMediaInfo = $sonos->GetMediaInfo();
+			$radio = $sonos->RadiotimeGetNowPlaying();
+			$album = $PositionInfo["album"];
+			if($PositionInfo["album"] == '')  {
+				# Kein Album - Dann Radio Stream Info
+				$album = $PositionInfo["streamContent"];
+			}
+			echo'' . $album . '';
+		break;
+
+		
 		case 'titelinfo':
 		if($debug == 1) {
 				echo debug();
@@ -604,386 +656,100 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 						</tr>
 						<tr>
 						<td>
-						<a href="'.$_SERVER['SCRIPT_NAME'].'?zonen='.$zonen.'&action=previous" target="_blank">Zurück</a>
-						<a href="'.$_SERVER['SCRIPT_NAME'].'?zonen='.$zonen.'&action=play" target="_blank">Abspielen</a>
-						<a href="'.$_SERVER['SCRIPT_NAME'].'?zonen='.$zonen.'&action=pause" target="_blank">Pause</a>
-						<a href="'.$_SERVER['SCRIPT_NAME'].'?zonen='.$zonen.'&action=stop" target="_blank">Stop</a>
-						<a href="'.$_SERVER['SCRIPT_NAME'].'?zonen='.$zonen.'&action=next" target="_blank">Nächster</a>
+						<a href="'.$_SERVER['SCRIPT_NAME'].'?zonen='.$master.'&action=previous" target="_blank">Zurück</a>
+						<a href="'.$_SERVER['SCRIPT_NAME'].'?zonen='.$master.'&action=play" target="_blank">Abspielen</a>
+						<a href="'.$_SERVER['SCRIPT_NAME'].'?zonen='.$master.'&action=pause" target="_blank">Pause</a>
+						<a href="'.$_SERVER['SCRIPT_NAME'].'?zonen='.$master.'&action=stop" target="_blank">Stop</a>
+						<a href="'.$_SERVER['SCRIPT_NAME'].'?zonen='.$master.'&action=next" target="_blank">Nächster</a>
 					</table>
 				';
 			break;
+			
 		
-		case 'sendmessagenew':
-			# create_tts();
-			global $text, $zonen, $messageid, $logging, $words, $voice, $accesskey, $secretkey, $rampsleep, $config, $save_status;
+		
+		case 'sendgroupmessage':
+			global $sonos, $text, $member, $master, $zone, $messageid, $logging, $words, $voice, $accesskey, $secretkey, $rampsleep, $config, $save_status, $mute, $membermaster, $groupvol;
+			
+			if(isset($_GET['volume'])) {
+				die("Die Angabe des Parameters Volume ist innerhalb dieser Syntax nicht zulässig!");
+				exit;
+			}
+			// erhöht die Defaultwerte aus der config.php um xx Prozent
+			if(isset($_GET['groupvolume']) && is_numeric($_GET['groupvolume']) && $_GET['groupvolume'] >= 0 && $_GET['groupvolume'] <= 100) {
+				$groupvolume = $_GET['groupvolume'];
+				SetGroupVolume($groupvolume);
+			}
+			if(isset($_GET['groupvolume']) && $_GET['groupvolume'] > 100) {
+				die("Der angegebene Wert für groupvolume ist nicht gültig. Erlaubte Werte sind 0 bis 100, bitte prüfen!");
+				exit;
+			}
+			$master = $_GET['zone'];
+			$groupvol = "1";
+			// Gruppe erstellen, vorher Zustand der Zonen in JSON Datei speichern
+			creategroup($membermaster, $groupvol);
+			$sonos->Stop();
+			// Alle Zonen auf Mute
+			$sonos = new PHPSonos($sonoszone[$master][0]);
+			$sonos->SetGroupMute(true);
+			// T2S erstellen und abspielen
+			create_tts($text, $messageid);
+			sleep($config['sleepgroupmessage']); // warten gemäß config.php
+			// setzen der T2S Lautstärke je Zone
+			foreach ($membermaster as $player => $zone) {
+				$sonos = new PHPSonos($sonoszone[$zone][0]); 
+				$sonos->SetVolume($config['sonoszone'][$zone][1]);
+			}
+			//Gruppen Mute aufheben
+			$sonos = new PHPSonos($sonoszone[$master][0]);
+			$sonos->SetGroupMute(false);
+			play_tts($messageid, $groupvol);
+			// Gruppe auflösen, JSON Datei einlesen und Ursprungszustand je Zone wiederherstellen
+			removegroup($membermaster);
+			logging();
+		break;
+		
+		
+		case 'sendmessage':
+			global $text, $master, $messageid, $logging, $words, $voice, $accesskey, $secretkey, $rampsleep, $config, $save_status, $groupvol;
+			
 			if(isset($_GET['volume']) && is_numeric($_GET['volume']) && $_GET['volume'] >= 0 && $_GET['volume'] <= 100) {
 				$volume = $_GET['volume'];
 			} else 	{
-			$volume = $config['messagevolume'];	
+				# übernimmt Standard Lautstärke der angegebenen Zone aus config.php
+				$volume = $config['sonoszone'][$master][1];
 			}
-					
-			# erlaubt das Abspielen einer Nachricht ohne messageid
-			$messageid = !empty($_GET['messageid']) ? $_GET['messageid'] : '0';
-			$messageid = _assertNumeric($messageid);
-			$rampsleep = $config['rampsto'];
-			# logging();
-						
-			if(isset($_GET['weather'])) {
-				# ruft die weather-to-speech Funktion auf
-				include_once("w2s.php");
-				$fileo = w2s($text);
-				$words = substr($fileo, 0, 500); // Begrenzung des Textes auf 500 Zeichen
-				$words = urlencode($fileo);
-				} 
-			elseif (isset($_GET['clock'])) {
-				# ruft die clock-to-speech Funktion auf
-				include_once("c2s.php");
-				$fileo = c2s($text);
-				$words = urlencode($fileo);
-				}
-			elseif (isset($_GET['sonos'])) {
-				# ruft die sonos-to-speech Funktion auf
-				include_once("s2s.php");
-				$fileo = s2s($text);
-				$words = urlencode($fileo);
-				$rampsleep = false;
-				}
-			elseif (isset($_GET['garbage'])) {
-				# ruft die garbage-to-speech Funktion auf
-				include_once("g2s.php");
-				$fileo = g2s($text);
-				$words = urlencode($fileo);
-				}
-			elseif (($messageid == 0) && ($_GET['text'] == '')) {
-				echo 'Die Eingabe ist ungueltig. Bitte den Text eingeben';
-				exit();
-				}
-			elseif (is_numeric($messageid > 0)) { # && ($fileo != '')) {
-				# spielt die angegebene Nachricht ab
-				$fileo = $_GET['messageid'];
-				}
-			elseif (($messageid == 0) && ($text == '')) {
-				# vorbereiten der TTS Nachricht an t2s
-				$fileo = !empty($_GET['text']) ? $_GET['text'] : ''; 
-				$words = substr($_GET['text'], 0, 500); // Begrenzung des Textes auf 500 Zeichen
-				$words = urlencode($_GET['text']);				
-				}	
-			# Name der MP3 als MD5 Hash zum Speichern
-			$fileo  = md5($words);
-			$fileolang = "$fileo";
-								
-			if (($messageid == '0') && ($fileo != '')) {
-				if ($config['t2s_engine'] === 1001) {
-					include_once("t2sv.php");
-					}
-				if ($config['t2s_engine'] === 3001) {
-					include_once("t2sx.php");
-					}
-				if ($config['t2s_engine'] === 2001) {
-					include_once("t2si.php");
-					if(!isset($_GET['voice'])) {
-						$voice = $config['voice'];	
-					} elseif (($_GET['voice'] == 'Marlene') or ($_GET['voice'] == 'Hans')) {
-						$voice = $_GET['voice'];
-					}
-				}
-				t2s($messageid);
-				print_r ($messageid);
-				}
-			
-			save_current_status();
-			play_tts($messageid);
-			restore_org_settings($save_status);
-			
+			$groupvol = "0";
+			create_tts($text, $messageid);
+			save_current_status_single();
+			play_tts($messageid, $groupvol);
+			restore_org_settings_single($save_status);
+			logging();
 		break;
 		
-		case 'sendmessage':
-			global $text, $zonen, $messageid, $logging, $words, $voice, $accesskey, $secretkey, $rampsleep, $config;
-			$Beginn = microtime(true);  // START 
 			
-			
-			if(isset($_GET['volume']) && is_numeric($_GET['volume']) && $_GET['volume'] >= 0 && $_GET['volume'] <= 100) {
-					$volume = $_GET['volume'];
-				} else 	{
-					$volume = $config['messagevolume'];	
-				}
-			
-			# erlaubt das Abspielen einer Nachricht ohne messageid
-			$messageid = !empty($_GET['messageid']) ? $_GET['messageid'] : '0';
-			$messageid = _assertNumeric($messageid);
-			$rampsleep = $config['rampto'];
-			logging();
-				
-			if(isset($_GET['weather'])) {
-				# ruft die weather-to-speech Funktion auf
-				include_once("w2s.php");
-				$fileo = w2s($text);
-				$words = substr($fileo, 0, 500); // Begrenzung des Textes auf 500 Zeichen
-				$words = urlencode($fileo);
-			} 
-			elseif (isset($_GET['clock'])) {
-				# ruft die clock-to-speech Funktion auf
-				include_once("c2s.php");
-				$fileo = c2s($text);
-				$words = urlencode($fileo);
-			}
-			elseif (isset($_GET['sonos'])) {
-				# ruft die sonos-to-speech Funktion auf
-				include_once("s2s.php");
-				$fileo = s2s($text);
-				$words = urlencode($fileo);
-				$rampsleep = false;
-			}
-			elseif (isset($_GET['garbage'])) {
-				# ruft die garbage-to-speech Funktion auf
-				include_once("g2s.php");
-				$fileo = g2s($text);
-				$words = urlencode($fileo);
-			}
-			elseif (($messageid == 0) && ($_GET['text'] == '')) {
-				echo 'Die Eingabe ist ungueltig. Bitte den Text eingeben';
-				exit();
-			}
-			elseif (is_numeric($messageid > 0)) { # && ($fileo != '')) {
-				# spielt die angegebene Nachricht ab
-				$fileo = $_GET['messageid'];
-			}
-			elseif (($messageid == 0) && ($text == '')) {
-				# vorbereiten der TTS Nachricht an t2s
-				$fileo = !empty($_GET['text']) ? $_GET['text'] : ''; 
-				$words = substr($_GET['text'], 0, 500); // Begrenzung des Textes auf 500 Zeichen
-				$words = urlencode($_GET['text']);				
-			}	
-			# Name der MP3 als MD5 Hash zum Speichern
-			$fileo  = md5($words);
-			$fileolang = "$fileo";
-						
-			if (($messageid == '0') && ($fileo != '')) {
-				if ($config['t2s_engine'] === 1001) {
-					include_once("t2sv.php");
-				}
-				if ($config['t2s_engine'] === 3001) {
-					include_once("t2sx.php");
-				}
-				if ($config['t2s_engine'] === 2001) {
-					include_once("t2si.php");
-					if(!isset($_GET['voice'])) {
-						$voice = $config['voice'];	
-					} elseif (($_GET['voice'] == 'Marlene') or ($_GET['voice'] == 'Hans')) {
-						$voice = $_GET['voice'];
-					}
-				}
-				t2s($messageid);
-			}
-					
-					#-- Ab hier Einstellungen speichern  -------------------------------------------------------------------
-					$save_MediaInfo = $sonos->GetMediaInfo();
-					$save_PositionInfo = $sonos->GetPositionInfo();
-					$save_Mute = $sonos->GetMute();
-					$save_Vol = $sonos->GetVolume();
-					$save_Status = $sonos->GetTransportInfo();
-					$save_TransportSettings = $sonos->GetTransportSettings();
-					$save_GetCurrentPlaylist = $sonos->GetCurrentPlaylist();
-					if(($save_Status == 2) || ($save_Status == 3) || ($messageid == '100') || ($sonos->GetVolume() < 10)) {
-						sleep('1');
-					} else { 
-						if($rampsleep === true) {
-							$sonos->RampToVolume("SLEEP_TIMER_RAMP_TYPE", "0");
-							sleep('10');
-						}
-					}
-						if (($save_PositionInfo["TrackDuration"] == '') || (substr($save_PositionInfo["TrackURI"], 0, 18) == "x-sonos-htastream:"))  {  
-							# zum Wiederherstellen es lief ein Radio Sender oder TV Playbar
-							$sonos->SetQueue("x-rincon-queue:" . getRINCON($sonoszone[$zonen]) . "#0"); //Playliste aktivieren
-						}
-						# Wenn Playliste läuft erst den Playmodus auf Normal setzen
-						if (substr($save_PositionInfo["TrackURI"], 0, 5) == "npsdy" || substr($save_PositionInfo["TrackURI"], 0, 11) == "x-file-cifs" || substr($save_PositionInfo["TrackURI"], 0, 12) == "x-sonos-http") { // Es läuft eine Musikliste
-							$sonos->SetPlayMode('NORMAL');
-						}
-					#-- Speichern Ende  ---------------------------------------------------------------------------------
-						
-					#-- Abspielen eines Jingles vor der Durchsage -------------------------------------------------------
-						$mpath = $config['messagespath'];
-						$sonos->SetMute(false);
-						$sonos->SetVolume($volume);
-						if(isset($_GET['playgong'])) {
-							if(isset($_GET['playgong']) && ($_GET['playgong'] == "yes")) {
-								$sonos->AddToQueue("x-file-cifs:" . $mpath . "/" . $config['file_gong'] . ".mp3");
-								}
-								if(isset($_GET['playgong']) && ($_GET['playgong'] == is_numeric($_GET['playgong']))) {
-									$sonos->AddToQueue("x-file-cifs:" . $mpath . "/" . $_GET['playgong'] . ".mp3");	
-								}
-					            $message_pos = count($save_GetCurrentPlaylist) + 1;
-								$sonos->SetTrack($message_pos);
-								$sonos->Play();   // Abspielen
-								$abort = false;
-
-               				# Prüfen ob Meldung zu Ende gespielt ist
-							sleep($config['sleeptimegong']); // warten gemäß config.php
-							while ($sonos->GetTransportInfo()==1) {
-								usleep(200000); // Alle 200ms wird abgefragt
-							}
-							# Message wieder aus Queue entfernen
-							$sonos->RemoveFromQueue($message_pos); 
-							}
-					#-- Ende Jingle  ------------------------------------------------------------------------------------------
-								
-					#-- TTS Durchsage abspielen	--------------------------------------------------------------------------------
-						$sonos->AddToQueue("x-file-cifs:" . $mpath . "/" . $messageid . ".mp3");
-						$message_pos = count($save_GetCurrentPlaylist) + 1;
-						$sonos->SetTrack($message_pos);
-						$sonos->Play();   // Abspielen
-						$abort = false;
-
-                		# Prüfen ob Meldung zu Ende gespielt ist
-						sleep($config['sleeptimegong']); // warten gemäﬂ config.php
-						while ($sonos->GetTransportInfo()==1) {
-							usleep(200000); // Alle 200ms wird abgefragt
-						}
-						# Message wieder aus Queue entfernen
-						$sonos->RemoveFromQueue($message_pos); 
-						sleep($config['sleeptimegong']);   // Wartezeit bis alter Zustand wieder hergestellt wird
-					#-- Ende TTS Durchsage -----------------------------------------------------------
-						
-					#-- alten Zustand wiederherstellen----------------------------------------------
-						# Playliste
-						if (substr($save_PositionInfo["TrackURI"], 0, 5) == "npsdy" || substr($save_PositionInfo["TrackURI"], 0, 11) == "x-file-cifs" || substr($save_PositionInfo["TrackURI"], 0, 12) == "x-sonos-http") { // Es läuft eine Musikliste
-							$sonos->SetTrack($save_PositionInfo["Track"]);
-							$sonos->Seek($save_PositionInfo["RelTime"],"NONE");
-							if($save_TransportSettings['shuffle'] == 1) {
-								$sonos->SetPlayMode('SHUFFLE_NOREPEAT'); // schaltet Zufallswiedergabe wieder ein 
-							} else {
-								$sonos->SetPlayMode('NORMAL'); // spielt im Normal Modus weiter
-							}
-						} 
-						# TV Playbar
-						elseif (substr($save_PositionInfo["TrackURI"], 0, 18) == "x-sonos-htastream:") {
-							$sonos->SetAVTransportURI($save_PositionInfo["TrackURI"]); 
-				        } 
-						# Radio
-						elseif (($save_PositionInfo["TrackDuration"] == '') && ($save_PositionInfo["title"] <> '')){
-						$sonos->SetRadio($save_PositionInfo["TrackURI"], $save_MediaInfo["title"]);
-						}
-						# und für alle Volume, Mute und Play
-						$sonos->SetVolume($save_Vol);
-						$sonos->SetMute($save_Mute);
-						if ($save_Status == 1) {
-							if ($rampsleep === true) {
-								$sonos->RampToVolume("ALARM_RAMP_TYPE", $save_Vol);	# alternativ AUTOPLAY_RAMP_TYPE
-							} else {
-							$sonos->SetVolume($save_Vol);
-							}
-							$sonos->Play();	
-						}
-						
-					#-- Ende wiederherstellen ------------------------------------------------------
-				#else {
-				#	die ("Keine Nachricht, keine Lautstaerke angegeben oder falsche Werte angegeben.");
-			#}
-		$Dauer = microtime(true) - $Beginn;  // ENDE 
-		if($debug == 1) {
-			echo "Runtime aus sonos2.php: Zwischen START und ENDE des Skripts sind ".round($Dauer, 2)." Sekunden vergangen"; 
-		}
-    break;
-	
-		
 	case 'group':
 		logging();
-		# Zonen zusamenfügen
-		$masterrincon = getRINCON($sonoszone[$zonen]);
-		#$sonos->SetVolume($volume);
-					
+		# Alle Zonen gruppieren
+		$masterrincon = getRINCON($sonoszone[$master][0]);
 		foreach ($sonoszone as $zone => $ip) {
 			if($zone != $_GET['zone']) {
-				$sonos = new PHPSonos($ip); 
-				# Ab hier hinzugefügt (speichert den Status aller Zonen)
-				#$save_MediaInfo_[$zone] = $sonos->GetMediaInfo();
-				$save_PositionInfo = $sonos->GetPositionInfo();
-				#$save_Mute = $sonos->GetMute();
-				$save_Vol = $sonos->GetVolume();
-				#$save_Status_[$zone] = $sonos->GetTransportInfo();
-				#$save_TransportSettings_[$zone] = $sonos->GetTransportSettings();
-				#$save_GetCurrentPlaylist_[$zone] = $sonos->GetCurrentPlaylist();
-				# Ende
-				#$sonos->SetVolume($volume);
+				$sonos = new PHPSonos($sonoszone[$zone][0]); //Sonos IPAdresse
 				$sonos->SetAVTransportURI("x-rincon:" . $masterrincon); 
 			}
 		}
 	break;
 		
 	case 'ungroup':
-		global $save_Vol, $save_TransportSettings, $save_Mute;
 		logging();
-		foreach($sonoszone as $zonen => $ip) {
-			$sonos = new PHPSonos($sonoszone[$zonen]); //Sonos IPAdresse
-			$sonos->SetQueue("x-rincon-queue:" . getRINCON($sonoszone[$zonen]) . "#0");
-			$sonos->SetVolume($save_Vol);
-			$sonos->SetMute($save_Mute);
-			if($save_TransportSettings == 1) {
-				$sonos->Play();	
-			}
+		# Alle Zonen Gruppierungen aufheben
+		foreach($sonoszone as $zone => $ip) {
+			$sonos = new PHPSonos($sonoszone[$zone][0]); //Sonos IPAdresse
+			$sonos->SetQueue("x-rincon-queue:" . getRINCON($sonoszone[$zone][0]) . "#0");
 		}
 	break;
 	
 
-
-	case 'groupalarm': // Speichert je Zone (IP Adresse) den Mute Status und die Lautstärke
-
-	foreach ($sonoszone as $player => $ip) {
-		$sonos = new PHPSonos($ip);
-		$save_Mute = $sonos->GetMute($ip);
-		$save_Vol = $sonos->GetVolume($ip);
-		$save_TransportSettings = $sonos->GetTransportSettings($ip);
-	}
-		$masterrincon = getRINCON($sonoszone[$zonen]); 
-		foreach ($sonoszone as $zone => $ip) {
-			if($zone != $_GET['zone']) {
-				$sonos = new PHPSonos($ip); 
-				$sonos->SetAVTransportURI("x-rincon:" . $masterrincon); 
-			}
-		}
-		foreach ($sonoszone as $player => $ip) {
-			$sonos->SetVolume($save_Vol);
-			$sonos->SetMute($save_Mute);
-			if($save_TransportSettings == 1) {
-				$sonos->Play();	
-			}
-		}
-	return $sonoszone;# ($save_Vol, save_Mute);
-	break;
-	
-	case 'groupalarmvol': // Speichert je Zone (IP Adresse) den Mute Status und die Lautstärke
-	
-	$save_Volt2s = $_GET['volume'];
-	foreach ($sonoszone as $player => $ip) {
-		$sonos = new PHPSonos($ip);
-		$save_Mute = $sonos->GetMute($ip);
-		$save_Vol = $sonos->GetVolume($ip);
-	}
-		$masterrincon = getRINCON($sonoszone[$zonen]); 
-		foreach ($sonoszone as $zone => $ip) {
-			if($zone != $_GET['zone']) {
-				$sonos = new PHPSonos($ip); 
-				$sonos->SetAVTransportURI("x-rincon:" . $masterrincon); 
-			}
-		}
-		foreach ($sonoszone as $player => $ip) {
-			$sonos->SetVolume($save_Volt2s);
-			$sonos->SetMute($save_Mute);
-			#$recover = array($ip => $save_Vol);
-			#var_dump($recover);
-			if($debug ==1 ) {
-			echo "Volume fuer Zone ".$player.': '.$save_Volt2s."<br/>";
-			"<br/>";
-			echo "Volume vorher fuer Zone ".$player.': '.$save_Vol."<br/>";
-			}
-		}
-		#print_r ($save_Volt2s);
-	return $sonoszone;# ($save_Vol, save_Mute);
-	break;
-	
-
-	# Loxone Bereich ------------------------------------------------------
+# Loxone Bereich ------------------------------------------------------
 		
 		case 'loxgettitel':  # Titel und Interpret für Übergabe an Loxone
 			$temp = $sonos->GetPositionInfo();
@@ -1029,9 +795,9 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 			$valuesplit[0] = rawurlencode($valuesplit[0]);
 			$valuesplit[1] = rawurlencode($valuesplit[1]);
 			sleep(3); // wartet 3 Sekunden (Latenzzeit Sonos)
-			$handle = fopen("http://$loxuser:$loxpassword@$loxip/dev/sps/io/S-Titel$zonen/$valueurl", "r"); // Titel- und Interpretinfo für Loxone
-			$handle = fopen("http://$loxuser:$loxpassword@$loxip/dev/sps/io/S-Titelinfo$zonen/$valuesplit[0]", "r"); // Nur Titelinfo für Loxone
-			$handle = fopen("http://$loxuser:$loxpassword@$loxip/dev/sps/io/S-Interpretinfo$zonen/$valuesplit[1]", "r"); // Nur Interpreteninfo für Loxone
+			$handle = fopen("http://$loxuser:$loxpassword@$loxip/dev/sps/io/S-Titel$master/$valueurl", "r"); // Titel- und Interpretinfo für Loxone
+			$handle = fopen("http://$loxuser:$loxpassword@$loxip/dev/sps/io/S-Titelinfo$master/$valuesplit[0]", "r"); // Nur Titelinfo für Loxone
+			$handle = fopen("http://$loxuser:$loxpassword@$loxip/dev/sps/io/S-Interpretinfo$master/$valuesplit[1]", "r"); // Nur Interpreteninfo für Loxone
 			echo '<PRE>';
  
 		break;	
@@ -1044,7 +810,7 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
      			$GetTransportInfo = $sonos->GetTransportInfo();
 	  			echo '<PRE>';
 		     	print_r($GetTransportInfo);
-				$handle = fopen("http://$loxuser:$loxpassword@$loxip/dev/sps/io/S-TransportInfo$zonen/$GetTransportInfo", "r");
+				$handle = fopen("http://$loxuser:$loxpassword@$loxip/dev/sps/io/S-TransportInfo$master/$GetTransportInfo", "r");
 		     	echo '</PRE>';
 			} else
 			{ echo "Die Datenuebermittlung zu Loxone ist nicht aktiv. Bitte in der config.php aktivieren"; }
@@ -1057,7 +823,7 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
    				$GetMute = $sonos->GetMute();
 	  			echo '<PRE>';
 	     		print_r($GetMute);
-				$handle = fopen("http://$loxuser:$loxpassword@$loxip/dev/sps/io/S-Mute$zonen/$GetMute", "r");
+				$handle = fopen("http://$loxuser:$loxpassword@$loxip/dev/sps/io/S-Mute$master/$GetMute", "r");
 	     		echo '</PRE>';
 			} else { 
 				echo "Die Datenuebermittlung zu Loxone ist nicht aktiv. Bitte in der config.php aktivieren";}
@@ -1070,7 +836,7 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
    				$GetVolume = $sonos->GetVolume();
 	  			echo '<PRE>';
 	     		print_r($GetVolume);
-				$handle = fopen("http://$loxuser:$loxpassword@$loxip/dev/sps/io/S-Volume$zonen/$GetVolume", "r");
+				$handle = fopen("http://$loxuser:$loxpassword@$loxip/dev/sps/io/S-Volume$master/$GetVolume", "r");
 	     		echo '</PRE>';
 			} else { 
 				echo "Die Datenuebermittlung zu Loxone ist nicht aktiv. Bitte in der config.php aktivieren"; }
@@ -1084,6 +850,15 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 	
 	# Debug Bereich ------------------------------------------------------
 
+	
+		case "test1":
+				
+			break;
+			
+		case "test2":
+				
+			break;
+	
 		case 'getmediainfo':
 				echo '<PRE>';
 				print_r($sonos->GetMediaInfo());
@@ -1138,11 +913,11 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 			break;	
 		  
 		case 'masterplayer':
-		
+			Global $zone, $master;		
 			foreach ($sonoszone as $player => $ip) {
 
-				$sonos = new PHPSonos($ip); //Slave Sonos ZP IPAddress
-				$temp = $sonos->GetPositionInfo();
+				$sonos = new PHPSonos($ip[0]); //Slave Sonos ZP IPAddress
+				$temp = $sonos->GetPositionInfo($ip);
 
 				if (substr($temp["TrackURI"], 0, 9) == "x-rincon:" ) {
 					$masterrincon = substr($temp["TrackURI"], 9 ,24);
@@ -1151,14 +926,15 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 				foreach ($sonoszone as $masterplayer => $ip) {
 					# hinzugefügt am 18.01 weil Fehler bei Gruppierung auflösen
 					$masterrincon = substr($temp["TrackURI"], 9, 24);
-					if(getRINCON($ip) == $masterrincon) {
+					if(getRINCON($ip[0]) == $masterrincon) {
 						echo "<br>" . $player . " -> ";
 						echo "Master des Players: " . $masterplayer;
 					}
 				}
 				$masterrincon = "";
 			}
-			break;
+			return $masterplayer;
+		break;
 			
 		case 'radiourl':
 		
@@ -1174,10 +950,7 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 		break;
 		
 		case 'getgroupmute':
-		
 			$GetGroupMute = $sonos->GetGroupMute();
-			#echo "Mute Mode fuer die Gruppe ist: " . $GetGroupMute;
-		
 		break;
 		
 		case 'setgroupmute':
@@ -1195,15 +968,15 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 		break;
 		
 		case 'setgroupvolume':
-			$GroupVolume = $_GET['volume'];
-			$GroupVolume = $sonos->SetGroupVolume($volume);
+			$GroupVolume = $_GET['groupvolume'];
+			$GroupVolume = $sonos->SetGroupVolume($GroupVolume);
 								
 		break;
 		
 		case 'setrelativegroupvolume':
 			SnapshotGroupVolume();
-			$RelativeGroupVolume = $_GET['volume'];
-			$RelativeGroupVolume = $sonos->SetRelativeGroupVolume($volume);
+			$RelativeGroupVolume = $_GET['groupvolume'];
+			$RelativeGroupVolume = $sonos->SetRelativeGroupVolume($RelativeGroupVolume);
 								
 		break;
 		
@@ -1233,7 +1006,7 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 		
 		break;		
 			
-		case 'getaudioinputattributes':	
+		case 'getaudioinputattributes':	// funktioniert nicht
 			echo '<PRE>';
 					print_r($sonos->GetAudioInputAttributes());
 			echo '</PRE>';
@@ -1274,13 +1047,7 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 		
 		break;
 		
-		case 'subscribezpgroupmanagement':
-			echo '<PRE>';
-					print_r($sonos->SubscribeZPGroupManagement($callback));
-			echo '</PRE>';
-		
-		break;
-		
+				
 		case 'listalarms':
 			echo '<PRE>';
 					print_r($sonos->ListAlarms());
@@ -1307,12 +1074,11 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 		
 		break;
 		
-		case 'getinvisible':
-			echo '<PRE>';
-					print_r($sonos->GetInvisible());
-			echo '</PRE>';
-		
-		break;
+		#case 'getinvisible':
+			#echo '<PRE>';
+			#		print_r($sonos->GetInvisible());
+			#echo '</PRE>';
+		#break;
 				
 		
 		case 'getcurrentplaylist':
@@ -1347,7 +1113,7 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 		
 			$GetZoneInfo = $sonos->GetzoneInfo();
 			echo '<PRE>';
-			echo "Technische Details der ausgewaehlten Zone: " . $zonen;
+			echo "Technische Details der ausgewaehlten Zone: " . $master;
 			echo '<PRE>';
 			echo '<PRE>';
 			echo "IP Adresse: " . substr($GetZoneInfo['IPAddress'], 0, 30);
@@ -1382,6 +1148,14 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 
 # Funktionen Bereich ------------------------------------------------------
 
+# Hilfs Funktionen für Skripte ------------------------------------------------------
+
+ function getArrayValue($array, $key, $default = null) { // Durchsucht eine Array und gibt die values zurück
+        if (isset($array[$key])) return $array[$key];
+        return $default;
+ }
+
+ 
  function getRINCON($zoneplayerIp) {
   $url = "http://" . $zoneplayerIp . ":1400/status/zp";
   $xml = simpleXML_load_file($url);
@@ -1392,7 +1166,7 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 
 
  function zonenmaster($member) {
-		global $sonos, $sonoszone;
+		global $sonos, $sonoszone, $master, $member;
 		foreach ($sonoszone as $player => $ip) {
 			#echo "<br>" . $player;
 			$sonos = new PHPSonos($ip); //Slave Sonos ZP IPAddress
@@ -1405,22 +1179,20 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 				$masterrincon = substr($temp["TrackURI"], 9 ,24);
 				if(getRINCON($ip) == $masterrincon) {
 					if ($member == $player) {
-				#	echo "<br>" . $player . " -> ";
-				#	echo "Master des Players: " . $masterplayer;
-					return  $masterplayer;				
+					echo "<br>" . $player . " -> ";
+					echo "Master des Players: " . $masterplayer;
+					return $masterplayer;
+					return $player;
 					}
 				}
 			}
 			unset($masterrincon);
 			unset($sonos);
 		}
- 
  }
-
-
- function debug() {
  
-	global $sonos, $sonoszone;
+ function debug() {
+ 	global $sonos, $sonoszone;
 	$GetPositionInfo = $sonos->GetPositionInfo();
 	$GetMediaInfo = $sonos->GetMediaInfo();
 	$GetTransportInfo = $sonos->GetTransportInfo();
@@ -1445,7 +1217,7 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 	echo '</PRE>';
 }
 
- function logging_alt() 
+ function logging_alt() // Nicht mehr in Nutzung
  { 
  	global $log, $config, $path;
 	if($log == true) {
@@ -1461,13 +1233,13 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
  
  function logging()
  {
- global $zonen, $log, $path;
+ global $master, $log, $path;
  if($log == true) {
 	$format = "txt"; //Moeglichkeiten: csv und txt
  	$datum_zeit = date("d.m.Y H:i:s");
 	$ip = $_SERVER["REMOTE_ADDR"];
 	$site = $_SERVER['REQUEST_URI'];
-	$browser = $zonen;
+	$browser = $master;
  
 	$monate = array(1=>"Januar", 2=>"Februar", 3=>"Maerz", 4=>"April", 5=>"Mai", 6=>"Juni", 7=>"Juli", 8=>"August", 9=>"September", 10=>"Oktober", 11=>"November", 12=>"Dezember");
 	$monat = date("n");
@@ -1475,7 +1247,7 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
  
 	$dateiname=$path."/log_".$monate[$monat]."_$jahr.$format";
  	$header = array("Datum/Uhrzeit", "    Zone  ", "Syntax");
-	$infos = array($datum_zeit, $zonen, $site);
+	$infos = array($datum_zeit, $master, $site);
  	if($format == "csv") {
 		$eintrag= '"'.implode('", "', $infos).'"';
 	} else { 
@@ -1496,101 +1268,108 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 	} else
 		echo "Logging ist derzeit ausgeschaltet. Bitte in der config.php aktivieren";
  }
+ 
 
  function random() {
-	$zufallszahl = mt_rand(90,99); // generiert eine Zufallszahl zwischen 90 und 99
+	// generiert eine Zufallszahl zwischen 90 und 99
+	$zufallszahl = mt_rand(90,99); 
 	return $zufallszahl;
  } 
  
  function _assertNumeric($number) {
-        if(!is_numeric($number)) {
-            echo "Die Eingabe ist nicht numerisch. Bitte wiederholen" ;
-        }
-        return $number;
-}
+	// prüft ob eine Eingabe numerisch ist
+    if(!is_numeric($number)) {
+        echo "Die Eingabe ist nicht numerisch. Bitte wiederholen" ;
+    }
+    return $number;
+ }
+ 
 
- function networkstatus() {
-	global $sonoszone, $zonen, $config, $debug;
-	$Server = $config['sonoszone'];
-		foreach($sonoszone as $zonen => $ip) {
-		if (!$socket = @fsockopen($ip, 1400, $errno, $errstr, 30)) {
-			#if($debug == 1) {
-				echo "Zone ".$zonen.": ".$ip." -=> Offline :-( <br/>"; 
-			} else { 
-				echo "Zone ".$zonen.": ".$ip." -=> Online :-) <br/>";
-			#}
-			fclose($socket); 
-		}
+function ping($host, $port) {
+   $timeout = 20;
+   $handle = @fsockopen($host = "udp://".$host, $port, $errno, $errstr, $timeout);
+	if (!$handle) {
+        return false;
+        exit();
+    } else {
+        return true;
+        fclose($handle);
 	}
 }
 
+
+function File_Put_Array_As_JSON($FileName, $ar, $zip=false) {
+	// erstellt eine JSON Datei aus einer Array
+    if (! $zip) {
+		return file_put_contents($FileName, json_encode($ar));
+    } else {
+		return file_put_contents($FileName, gzcompress(json_encode($ar)));
+    }
+}
+
+function File_Get_Array_From_JSON($FileName, $zip=false) {
+	// liest eine JSON Datei und erstellt eine Array
+    if (! is_file($FileName)) 	{ die ("Fatal: Die Datei $FileName gibt es nicht."); }
+	    if (! is_readable($FileName))	{ die ("Fatal: Die Datei $FileName ist nicht lesbar."); }
+            if (! $zip) {
+				return json_decode(file_get_contents($FileName), true);
+            } else {
+				return json_decode(gzuncompress(file_get_contents($FileName)), true);
+	    }
+}
+
  function loxdata() {
- 	global $sonos, $loxuser, $loxpassword, $loxip, $zonen, $handle, $config;
-	# prüft ob die Verbindung zu Loxone in der config eingeschaltet ist			
+ 	global $sonos, $loxuser, $loxpassword, $loxip, $master, $handle, $config;
+	// prüft ob die Verbindung zu Loxone in der config eingeschaltet ist			
 	if($config['LoxDaten'] === false) {
-		echo "Die Datenuebermittlung zu Loxone ist nicht aktiv. Bitte zuerst in der config.php aktivieren"; 
+		die("Die Datenuebermittlung zu Loxone ist nicht aktiv. Bitte zuerst in der config.php aktivieren");
 		exit;
 	}	
 	$GetVolume = $sonos->GetVolume();
 	$GetTransportInfo = $sonos->GetTransportInfo();
 	try {
-		$handle = @fopen("http://$loxuser:$loxpassword@$loxip/dev/sps/io/S-Volume$zonen/$GetVolume", "r");
-		$handle = @fopen("http://$loxuser:$loxpassword@$loxip/dev/sps/io/S-TransportInfo$zonen/$GetTransportInfo", "r");
+		$handle = @fopen("http://$loxuser:$loxpassword@$loxip/dev/sps/io/S-Volume$master/$GetVolume", "r");
+		$handle = @fopen("http://$loxuser:$loxpassword@$loxip/dev/sps/io/S-TransportInfo$master/$GetTransportInfo", "r");
 	} catch (Exception $e) {
 		echo "Die Verbindung zu Loxone konnte nicht initiiert werden!";
 	}
 }
+
+ function SetGroupVolume($groupvolume) {
+	global $sonos;
+	$GroupVolume = $_GET['groupvolume'];
+	$GroupVolume = $sonos->SetGroupVolume($GroupVolume);
+ }
+
+function SetRelativeGroupVolume($volume) {
+	global $sonos;
+	SnapshotGroupVolume();
+	$RelativeGroupVolume = $_GET['groupvolume'];
+	$RelativeGroupVolume = $sonos->SetRelativeGroupVolume($RelativeGroupVolume);
+}
+
 function SnapshotGroupVolume() {
 	global $sonos;
-		$SnapshotGroupVolume = $sonos->SnapshotGroupVolume();
+	$SnapshotGroupVolume = $sonos->SnapshotGroupVolume();
 	return $SnapshotGroupVolume;
 }
 
+ function SetGroupMute($mute) {
+	global $sonos;
+		$sonos->SetGroupMute($mute);
+ }
 
-function creategroup() {
-	global $sonoszone, $zonen, $config, $sonos;
-	$members = $_GET['members'];
-	$members = explode(",", $members); 
-    print_r($members);
-	#exit;
-	$i=0;
-	#foreach ($sonoszone as $members) { 
-    #    $ResultVal = SearchArray($members, 0, $sonoszone); 
-    #    $SonosGroup[$i] = array($SonosGroup[$ResultVal][0],$SonosGroup[$ResultVal][1],$SonosGroup[$ResultVal][2],$SonosGroup[$ResultVal][3]); 
-    #    $i++; 
-    #} 
-	$AnzahlPlayer = count($members);
-	for ($i=0; $i < $AnzahlPlayer; $i++) { 
-		$AddMember = $sonos->AddMember(getRINCON($sonoszone[$members])); # Member Rincon
-		$sonos = new PHPSonos($sonoszone[$members]); //Slave Sonos ZP IPAddress
-		$ret = $sonos->SetAVTransportURI("x-rincon:" . getRINCON($sonoszone[$zonen])); // Master Sonos ZP IPAddress
-    } 
-}
-
-function SearchArray($value, $key, $array) { 
-   foreach ($array as $k => $val) { 
-       if ($val[$key] == $value) { 
-            return $k; 
-        } 
-   } 
-    return NULL; 
-} 
-
-function create_tts() {
-
-global $text, $zonen, $messageid, $logging, $words, $voice, $accesskey, $secretkey, $rampsleep, $config;
-	if(isset($_GET['volume']) && is_numeric($_GET['volume']) && $_GET['volume'] >= 0 && $_GET['volume'] <= 100) {
-		$volume = $_GET['volume'];
-	} else 	{
-	$volume = $config['messagevolume'];	
-	}
-			
+#-- ab hier T2S Funktionen ------------------------------------------------------------------------------------------
+	
+function create_tts($text, $messageid) {
+	global $sonos, $text, $member, $master, $zone, $messageid, $logging, $words, $voice, $accesskey, $secretkey, $rampsleep, $config, $save_status, $mute;
+	global $fileolang, $fileo, $volume;
+				
 	# erlaubt das Abspielen einer Nachricht ohne messageid
 	$messageid = !empty($_GET['messageid']) ? $_GET['messageid'] : '0';
 	$messageid = _assertNumeric($messageid);
 	$rampsleep = $config['rampto'];
-	# logging();
-				
+					
 	if(isset($_GET['weather'])) {
 		# ruft die weather-to-speech Funktion auf
 		include_once("w2s.php");
@@ -1634,7 +1413,7 @@ global $text, $zonen, $messageid, $logging, $words, $voice, $accesskey, $secretk
 	# Name der MP3 als MD5 Hash zum Speichern
 	$fileo  = md5($words);
 	$fileolang = "$fileo";
-						
+	# ruft die zur Verfügung stehenden T2S Engines auf (je nach config)					
 	if (($messageid == '0') && ($fileo != '')) {
 		if ($config['t2s_engine'] === 1001) {
 			include_once("t2sv.php");
@@ -1656,41 +1435,124 @@ global $text, $zonen, $messageid, $logging, $words, $voice, $accesskey, $secretk
 	}
 	
 
-function save_current_status() {
-	global $zonen, $config, $sonoszone, $sonos, $messageid, $rampsleep, $save_status;
-	$save_status[1] = $sonos->GetMediaInfo();
-	$save_status[2] = $sonos->GetPositionInfo();
-	$save_status[3] = $sonos->GetMute();
-	$save_status[4] = $sonos->GetVolume();
-	$save_status[5] = $sonos->GetTransportInfo();
-	$save_status[6] = $sonos->GetTransportSettings();
-	$save_status[7] = $sonos->GetCurrentPlaylist();
-	if(($save_status[5] == 2) || ($save_status[5] == 3) || ($messageid == '100') || ($sonos->GetVolume() < 10)) {
-		sleep('1');
-	} else { 
-	if($rampsleep === true) {
-		$sonos->RampToVolume("SLEEP_TIMER_RAMP_TYPE", "0");
-		sleep('10');
-		}
-	}
-	if (($save_status[2]["TrackDuration"] == '') || (substr($save_status[2]["TrackURI"], 0, 18) == "x-sonos-htastream:"))  {  
-		# zum Wiederherstellen es lief ein Radio Sender oder TV Playbar
-		$sonos->SetQueue("x-rincon-queue:" . getRINCON($sonoszone[$zonen]) . "#0"); //Playliste aktivieren
-	}
-	# Wenn Playliste läuft erst den Playmodus auf Normal setzen
-	if (substr($save_status[2]["TrackURI"], 0, 5) == "npsdy" || substr($save_status[2]["TrackURI"], 0, 11) == "x-file-cifs" || substr($save_status[2]["TrackURI"], 0, 12) == "x-sonos-http") { // Es läuft eine Musikliste
-		$sonos->SetPlayMode('NORMAL');
-		}
-	# return ($save_MediaInfo, $save_PositionInfo, $save_Mute, $save_Vol, $save_Status, $save_TransportSettings, $save_CurrentPlaylist);
-	#$var = array($save_MediaInfo, $save_PositionInfo, $save_Mute, $save_Vol, $save_Status, $save_TransportSettings);
-	return ($save_status);
-	}
+
+function creategroup($member,$groupvol = "0") {
+	global $sonoszone, $master, $sonos, $config, $zonevolume, $save_status, $membermaster, $fvolume;
 	
-function play_tts($messageid) {
-	global $volume, $config, $sonos, $messageid, $save_status;
+	$file = 'tmp_sz.json'; 
+	$masterrincon = getRINCON($sonoszone[$master][0]); 
+	$member = $_GET['member'];
+	$member = explode(',', $member);
+	// fügt den Master der existierenden Array hinzu
+	array_push($member, $master);
+	// erstellt Datei und fügt die Zonendaten hinzu
+	foreach ($member as $player => $sz) {
+		foreach ($member as $szone => $zone) {
+			$sonos = new PHPSonos($sonoszone[$sz][0]); //Sonos IP Adresse
+			$save_status[$sz]['Mute'] = $sonos->GetMute($zone);
+			// falls Volume < 10 wird vor dem Gruppieren die Standardlautstärke aus der config.php geholt
+			if($groupvol <> "1") {
+				if($sonos->GetVolume($zone) < 10) {
+					foreach ($member as $szone => $zone) {
+						$sonos = new PHPSonos($sonoszone[$zone][0]); //Sonos IP Adresse
+						$save_status[$sz]['Volume'] = $config['sonoszone'][$zone][2];
+						$sonos->SetVolume($save_status[$sz]['Volume']);
+					}
+				}
+			}
+			$save_status[$sz]['Volume'] = $sonos->GetVolume($zone);
+			$save_status[$sz]['MediaInfo'] = $sonos->GetMediaInfo($zone);
+			$save_status[$sz]['PositionInfo'] = $sonos->GetPositionInfo($zone);
+			$save_status[$sz]['TransportInfo'] = $sonos->GetTransportInfo($zone);
+			$save_status[$sz]['TransportSettings'] = $sonos->GetTransportSettings($zone);
+		}
+	}
+	// konvertiert Daten in JSON und speichert
+	File_Put_Array_As_JSON($file, $save_status);
+	$membermaster = $member;
+	// löscht den Master aus der Array
+	$members = array_pop($member);
+	// Gruppieren der angegebenen Zonen
+	foreach ($member as $zone) {
+		$sonos = new PHPSonos($sonoszone[$zone][0]);
+		$sonos->SetAVTransportURI("x-rincon:" . $masterrincon); 
+	}
+	return array($membermaster); // gibt member und master zurück
+}
+	
+	
+function removegroup($membermaster) {
+	global $sonoszone, $path, $master, $sonos, $config, $zonevolume, $save_status, $results, $membermaster, $member;
+	
+	$file = 'tmp_sz.json'; 
+	// Auflösen der Gruppe
+	$member = $_GET['member'];
+	$member = explode(',', $member);
+	# prüft ob angegebene Zone Teil der Gruppe ist oder nicht
+	foreach ($member as $splayer => $ip) {
+		$sonos = new PHPSonos($sonoszone[$ip][0]); //Slave Sonos ZP IPAddress
+		$temp = $sonos->GetPositionInfo($ip);
+		if (substr($temp["TrackURI"], 0, 9) != "x-rincon:" ) {
+			die("Die angegebene Zone ".($ip). " ist nicht Teil der Gruppe oder sie ist der Master der Gruppe und kann von daher nicht entfernt werden!");
+			exit;
+		}
+	}
+	// nimmt angegebene Zone(n) aus der Gruppe heraus
+	foreach ($member as $zone) {
+		$sonos = new PHPSonos($sonoszone[$zone][0]);
+		$sonos->BecomeCoordinatorOfStandaloneGroup();
+	}
+	// Importiert die Daten mit den gespeicherten Einstellungen in eine Array
+	$import = array();
+	$import = File_Get_Array_From_JSON($file, $zip=false);
+	if(empty($membermaster)) {
+		$membermaster = $member;
+	} else {
+		$membermaster = $membermaster;
+	}
+	// Allgemeines Wiederherstellen der Ursprungszustände
+	foreach($membermaster as $player => $zone) {
+		$sonos = new PHPSonos($sonoszone[$zone][0]); //Sonos IP Adresse
+		# zum Wiederherstellen es lief:
+		# Playliste
+		if (substr($import[$zone]['PositionInfo']["TrackURI"], 0, 5) == "npsdy" || substr($import[$zone]['PositionInfo']["TrackURI"], 0, 11) == "x-file-cifs" || substr($import[$zone]['PositionInfo']["TrackURI"], 0, 12) == "x-sonos-http") { // Es läuft eine Musikliste
+			$sonos->SetTrack($import[$zone]['PositionInfo']['Track']);
+			$sonos->Seek($import[$zone]['PositionInfo']['RelTime'],"NONE");
+				if($import[$zone]['TransportSettings']['shuffle'] == 1) {
+					$sonos->SetPlayMode('SHUFFLE_NOREPEAT'); // schaltet Zufallswiedergabe wieder ein 
+				} else {
+					$sonos->SetPlayMode('NORMAL'); // spielt im Normal Modus weiter
+				}
+			} 
+			# TV Playbar
+			elseif (substr($import[$zone]['PositionInfo']["TrackURI"], 0, 18) == "x-sonos-htastream:") {
+				$sonos = new PHPSonos($sonoszone[$zone][0]); //Sonos IPAdresse
+				$sonos->SetAVTransportURI($import[$zone]['PositionInfo']["TrackURI"]); 
+			} 
+			# Radio
+			elseif (($import[$zone]['PositionInfo']["TrackDuration"] == '') && ($import[$zone]['PositionInfo']["title"] <> '')){
+				$sonos = new PHPSonos($sonoszone[$zone][0]); //Sonos IPAdresse
+				$sonos->SetRadio($import[$zone]['PositionInfo']["TrackURI"], $import[$zone]['MediaInfo']["title"]);
+			}
+		$sonos->SetVolume($import[$zone]['Volume']);
+		$sonos->SetMute($import[$zone]['Mute']);
+		if($import[$zone]['TransportInfo'] == 1) {
+			$sonos->Play();
+		}
+	}
+	#unlink($file); 
+}	
+
+	
+function play_tts($messageid, $groupvol) {
+	global $volume, $config, $sonos, $messageid, $save_status, $sonoszone, $master, $groupvol;
+	// wenn Single T2S dann Volume und Mute setzten
+	if($groupvol == "0") {
+		$sonos->SetMute(false);
+		$sonos->SetVolume($volume);
+	}
 	$mpath = $config['messagespath'];
-	$sonos->SetMute(false);
-	$sonos->SetVolume($volume);
+	$sonos = new PHPSonos($sonoszone[$master][0]); //Sonos IP Adresse
 	if(isset($_GET['playgong'])) {
 		if(isset($_GET['playgong']) && ($_GET['playgong'] == "yes")) {
 			$sonos->AddToQueue("x-file-cifs:" . $mpath . "/" . $config['file_gong'] . ".mp3");
@@ -1698,7 +1560,13 @@ function play_tts($messageid) {
 		if(isset($_GET['playgong']) && ($_GET['playgong'] == is_numeric($_GET['playgong']))) {
 			$sonos->AddToQueue("x-file-cifs:" . $mpath . "/" . $_GET['playgong'] . ".mp3");	
 		}
-		$message_pos = count($save_status[7]) + 1;
+		if($groupvol == "1") {
+			$save_status = $sonos->GetCurrentPlaylist();
+			$message_pos = count($save_status);
+		} else {
+			$message_pos = count($save_status['CurrentPlaylist']) + 1;
+		}
+		$sonos->SetQueue("x-rincon-queue:" . getRINCON($sonoszone[$master][0]) . "#0"); //Playliste aktivieren
 		$sonos->SetTrack($message_pos);
 		$sonos->Play();   // Abspielen
 		$abort = false;
@@ -1714,8 +1582,16 @@ function play_tts($messageid) {
 		#-- Ende Jingle  ------------------------------------------------------------------------------------------
 									
 		#-- TTS Durchsage abspielen	--------------------------------------------------------------------------------
+		$sonos = new PHPSonos($sonoszone[$master][0]); //Sonos IP Adresse
 		$sonos->AddToQueue("x-file-cifs:" . $mpath . "/" . $messageid . ".mp3");
-		$message_pos = count($save_status[7]) + 1;
+		
+		if($groupvol == "1") {
+			$save_status = $sonos->GetCurrentPlaylist();
+			$message_pos = count($save_status);
+		} else {
+			$message_pos = count($save_status['CurrentPlaylist']) + 1;#['CurrentPlaylist']
+		}
+		$sonos->SetQueue("x-rincon-queue:" . getRINCON($sonoszone[$master][0]) . "#0"); //Playliste aktivieren
 		$sonos->SetTrack($message_pos);
 		$sonos->Play();   // Abspielen
 		$abort = false;
@@ -1728,43 +1604,135 @@ function play_tts($messageid) {
 		# Message wieder aus Queue entfernen
 		$sonos->RemoveFromQueue($message_pos); 
 		sleep($config['sleeptimegong']);   // Wartezeit bis alter Zustand wieder hergestellt wird
+		
 }
 
 
-function restore_org_settings($save_status) {
+function save_current_status_single() {
+	global $master, $config, $sonoszone, $sonos, $messageid, $rampsleep, $save_status;
+	$save_status['MediaInfo'] = $sonos->GetMediaInfo();
+	$save_status['PositionInfo'] = $sonos->GetPositionInfo();
+	$save_status['Mute'] = $sonos->GetMute();
+	$save_status['Volume'] = $sonos->GetVolume();
+	$save_status['TransportInfo'] = $sonos->GetTransportInfo();
+	$save_status['TransportSettings'] = $sonos->GetTransportSettings();
+	$save_status['CurrentPlaylist'] = $sonos->GetCurrentPlaylist();
+	if(($save_status['TransportInfo'] == 2) || ($save_status['TransportInfo'] == 3) || ($messageid == '100') || ($sonos->GetVolume() < 10)) {
+		sleep('1');
+	} else { 
+	if($rampsleep === true) {
+		$sonos->RampToVolume("SLEEP_TIMER_RAMP_TYPE", "0");
+		sleep('10');
+		}
+	}
+	if (($save_status['PositionInfo']["TrackDuration"] == '') || (substr($save_status['PositionInfo']["TrackURI"], 0, 18) == "x-sonos-htastream:"))  {  
+		# zum Wiederherstellen es lief ein Radio Sender oder TV Playbar
+		$sonos = new PHPSonos($sonoszone[$master][0]); //Sonos IP Adresse
+		$sonos->SetQueue("x-rincon-queue:" . getRINCON($sonoszone[$master][0]) . "#0"); //Playliste aktivieren
+	}
+	# Wenn Playliste läuft erst den Playmodus auf Normal setzen
+	if (substr($save_status['PositionInfo']["TrackURI"], 0, 5) == "npsdy" || substr($save_status['PositionInfo']["TrackURI"], 0, 11) == "x-file-cifs" || substr($save_status['PositionInfo']["TrackURI"], 0, 12) == "x-sonos-http") { // Es läuft eine Musikliste
+		$sonos->SetPlayMode('NORMAL');
+		}
+	return ($save_status);
+}
+
+
+function restore_org_settings_single($save_status) {
 	global $save_status, $sonos, $rampsleep;
 	# Playliste
-	if (substr($save_status[2]["TrackURI"], 0, 5) == "npsdy" || substr($save_status[2]["TrackURI"], 0, 11) == "x-file-cifs" || substr($save_status[2]["TrackURI"], 0, 12) == "x-sonos-http") { // Es läuft eine Musikliste
-		$sonos->SetTrack($save_status[2]["Track"]);
-		$sonos->Seek($save_status[2]["RelTime"],"NONE");
-		if($save_status[6]['shuffle'] == 1) {
+	if (substr($save_status['PositionInfo']["TrackURI"], 0, 5) == "npsdy" || substr($save_status['PositionInfo']["TrackURI"], 0, 11) == "x-file-cifs" || substr($save_status['PositionInfo']["TrackURI"], 0, 12) == "x-sonos-http") { // Es läuft eine Musikliste
+		$sonos->SetTrack($save_status['PositionInfo']["Track"]);
+		$sonos->Seek($save_status['PositionInfo']["RelTime"],"NONE");
+		if($save_status['TransportSettings']['shuffle'] == 1) {
 			$sonos->SetPlayMode('SHUFFLE_NOREPEAT'); // schaltet Zufallswiedergabe wieder ein 
 		} else {
 			$sonos->SetPlayMode('NORMAL'); // spielt im Normal Modus weiter
 		}
 	} 
 		# TV Playbar
-		elseif (substr($save_status[2]["TrackURI"], 0, 18) == "x-sonos-htastream:") {
-			$sonos->SetAVTransportURI($save_status[2]["TrackURI"]); 
+		elseif (substr($save_status['PositionInfo']["TrackURI"], 0, 18) == "x-sonos-htastream:") {
+			$sonos->SetAVTransportURI($save_status['PositionInfo']["TrackURI"]); 
 			} 
 		# Radio
-		elseif (($save_status[2]["TrackDuration"] == '') && ($save_status[2]["title"] <> '')){
-			$sonos->SetRadio($save_status[2]["TrackURI"], $save_status[1]["title"]);
+		elseif (($save_status['PositionInfo']["TrackDuration"] == '') && ($save_status['PositionInfo']["title"] <> '')){
+			$sonos->SetRadio($save_status['PositionInfo']["TrackURI"], $save_status['MediaInfo']["title"]);
 			}
 		# und für alle Volume, Mute und Play
-		$sonos->SetVolume($save_status[4]);
-		$sonos->SetMute($save_status[3]);
-		if ($save_status[5] == 1) {
+		$sonos->SetVolume($save_status['Volume']);
+		$sonos->SetMute($save_status['Mute']);
+		if ($save_status['TransportInfo'] == 1) {
 			if ($rampsleep === true) {
-				$sonos->RampToVolume("ALARM_RAMP_TYPE", $save_status[4]);	# alternativ AUTOPLAY_RAMP_TYPE
+				$sonos->RampToVolume("ALARM_RAMP_TYPE", $save_status['Volume']);	# alternativ AUTOPLAY_RAMP_TYPE
 			} else {
-				$sonos->SetVolume($save_status[4]);
+				$sonos->SetVolume($save_status['Volume']);
 			}
 		$sonos->Play();	
-		}
 	}
+}
 
+
+function groupplaylist() {
+	Global $debug, $sonos, $master, $sonoszone, $config, $volume;
+	logging();
+	if($debug == 1) {
+		echo $sonoszone[$master][0] . "<br>";
+		echo getRINCON($sonoszone[$master][0]) . "<br>";	
+	}
+	if(isset($_GET['playlist'])) {
+		$sonos->SetQueue("x-rincon-queue:" . getRINCON($sonoszone[$master][0]) . "#0"); 
+		$playlist = $_GET['playlist'];
+	} else {
+		die ("Keine Playliste mit dem angegebenen Namen gefunden.");
+	}
 	
+	# Sonos Playlist ermitteln und mit übergebene vergleichen	
+	$sonoslists=$sonos->GetSONOSPlaylists();
+	$pleinzeln = 0;
+	while ( $pleinzeln < count($sonoslists) ) {
+		if($playlist == $sonoslists[$pleinzeln]["title"]) {
+			$plfile = urldecode($sonoslists[$pleinzeln]["file"]);
+			$sonos->ClearQueue();
+			$sonos->AddToQueue($plfile); //Datei hinzufügen
+			$sonos->SetQueue("x-rincon-queue:". getRINCON($sonoszone[$master][0]) ."#0"); 
+			if($sonos->GetVolume() <= $config['volrampto'])	{
+				$sonos->RampToVolume($config['rampto'], $volume);
+				$sonos->Play();
+			} else {
+				$sonos->Play();
+			}
+				$gefunden = 1;
+		}
+		$pleinzeln++;
+			if (($pleinzeln == count($sonoslists) ) && ($gefunden != 1)) {
+				die("Keine Playliste mit dem angegebenen Namen gefunden.");
+			}
+		}			
+}
 
+function groupradioplaylist(){
+	Global $debug, $sonos, $master, $sonoszone, $config, $volume;
+			
+	#logging();
+	if(isset($_GET['playlist'])) {
+        $playlist = $_GET['playlist'];
+    } else {
+		die ("Keine Radio Playlist gefunden.");
+    }
+    # Sonos Radio Playlist ermitteln und mit übergebene vergleichen   
+    $radiolists = $sonos->Browse("R:0/0","c");
+	$radioplaylist = urldecode($playlist);
+	$rleinzeln = 0;
+    while ($rleinzeln < count($radiolists)) {
+	if ($radioplaylist == $radiolists[$rleinzeln]["title"]) {
+			$sonos->SetRadio(urldecode($radiolists[$rleinzeln]["res"]));
+            $sonos->SetVolume($volume);
+            $sonos->Play();
+    }
+    $rleinzeln++;
+	}   
+}
+
+		
 
 ?>

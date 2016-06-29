@@ -5,19 +5,20 @@ function t2s($messageid)
 // @Parameter = $messageid von sonos2.php
 
 {
-	global $words, $config, $messageid, $fileolang;
+	global $words, $config, $messageid, $fileolang, $fileo;
 
 		$ttskey = $config['VoiceRSS_key'];
 		$ttslanguage = $config['messageLangV'];
 		$ttsaudiocodec = $config['audiocodec'];
+		$words = utf8_encode($words);
 						
-		####################################################################
-		# zu testen da auf Google Translate basierend
+		#####################################################################################################################
+		# zu testen da auf Google Translate basierend (urlencode)
 		# ersetzt Umlaute um die Sprachqualität zu verbessern
-		#$search = array('ä','ü','ö','Ä','Ü','Ö','ß','°','%20','%C3%84','%C3%A4','%C3%9C','%C3%BC','%C3%9','C3%BC','%C3%9F');
-		#$replace = array('ae','ue','oe','Ae','Ue','Oe','ss','Grad',' ','Ae','ae','Ue','ue','Oe','oe','ss');
-		#$words = str_replace($search,$replace,$words);
-		####################################################################		
+		# search = array('ä','ü','ö','Ä','Ü','Ö','ß','°','%20','%C3%84','%C4','%C3%9C','%FC','%C3%96','%F6','%DF','%C3%9F');
+		# replace = array('ae','ue','oe','Ae','Ue','Oe','ss','Grad',' ','ae','ae','ue','ue','oe','oe','ss','ss');
+		# words = str_replace($search,$replace,$words);
+		#####################################################################################################################	
 
 		# Sprache in Großbuchsaben
 		$upper = strtoupper($ttslanguage);
