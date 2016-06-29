@@ -103,10 +103,10 @@ http://DEINE_IP/DEIN_VERZEICHNIS/index.php?zone=DEINE_ZONE&action=crossfade&cros
 ###### Stoppt alle Zonen
 http://DEINE_IP/DEIN_VERZEICHNIS/index.php?zone=DEINE_ZONE&action=stop&stopall
 
-###### Gruppiert alle Zonen
+#### Gruppiert alle Zonen
 http://DEINE_IP/DEIN_VERZEICHNIS/index.php?zone=DEINE_ZONE&action=group
 
-#### Hebt die Gruppierung wieder auf
+##### Hebt die Gruppierung wieder auf
 http://DEINE_IP/DEIN_VERZEICHNIS/index.php?zone=DEINE_ZONE&action=ungroup
 
 ## weather-to-speech (in Verbindung mit wunderground.com [NUR API key benötigt])
