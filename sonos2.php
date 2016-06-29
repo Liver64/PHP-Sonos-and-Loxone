@@ -485,52 +485,11 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 
 		case 'radioplaylist':
 			logging();
-			if(isset($_GET['playlist'])) {
-				$playlist = $_GET['playlist'];
-			} else {
-				die ("Playlist (Radioname) wude vergessen mit anzugeben.");
-			}
-			$GetCurrentPlaylist = $sonos->GetCurrentPlaylist();
-			# Debug Info
-			if ($debug == 1) {
-				echo "Anzahl:  " . count($GetCurrentPlaylist) . "<br>";
-				echo "Transport: " . $sonos->GetTransportInfo() . "<br>";
-			}
-			$radiolists = $sonos->Browse("R:0/0","c");
-			$rleinzeln = 0;
-			while ( $rleinzeln < count($radiolists) ) {
-			if ($debug == 1) {
-				echo "Radioliste " . $rleinzeln . "<br>\n\n";
-				echo "ID: " . $radiolists[$rleinzeln]["id"] . "<br>\n";
-				echo "Titel: " . $radiolists[$rleinzeln]["title"] . "<br>\n";
-				echo "Typ: " . $radiolists[$rleinzeln]["typ"] . "<br>\n";
-				echo "File: " . $radiolists[$rleinzeln]["res"] . "<br>\n";
-				echo urldecode($radiolists[$rleinzeln]["res"]) . "<br>\n";
-				echo "ausgewählter Radiosender: >" .  urldecode($playlist) . "<<br>\n";
-				echo "<br>\n";
-			}
-			$gefunden = false;
-			$radio = urldecode($playlist);
-			$sender = $radiolists[$rleinzeln]["title"];
-			if ($radio == $sender) {
-				$sonos->SetRadio(urldecode($radiolists[$rleinzeln]["res"]));
-					if($sonos->GetVolume() <= $config['volrampto'])	{
-						$sonos->RampToVolume($config['rampto'], $volume);
-						$sonos->Play();
-					} else {
-						$sonos->Play();
-					}
-				$gefunden = true;
-				}
-				$rleinzeln++;
-			}
-			if($gefunden == false) {
-				die("Der Sender wurde nicht in den Sonos-Favoriten gefunden.");
-			}
+			groupradioplaylist();
 		break;
 		
 		
-		case 'groupradioplaylist': // funktioniert nicht
+		case 'groupradioplaylist': 
 			global $member, $debug, $sonos;
 			logging();
 			$master = $_GET['zone'];
@@ -1674,7 +1633,6 @@ function restore_org_settings_single($save_status) {
 
 function groupplaylist() {
 	Global $debug, $sonos, $master, $sonoszone, $config, $volume;
-	logging();
 	if($debug == 1) {
 		echo $sonoszone[$master][0] . "<br>";
 		echo getRINCON($sonoszone[$master][0]) . "<br>";	
@@ -1713,7 +1671,6 @@ function groupplaylist() {
 function groupradioplaylist(){
 	Global $debug, $sonos, $master, $sonoszone, $config, $volume;
 			
-	#logging();
 	if(isset($_GET['playlist'])) {
         $playlist = $_GET['playlist'];
     } else {
