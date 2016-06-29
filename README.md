@@ -1,15 +1,15 @@
-Sonos http Befehle rund um Loxone
-=================================
+## Sonos http Befehle rund um Loxone
 
-## Einleitung 
+
+### Einleitung 
 
 *sonos2* ist eine Sammlung von Befehlen welche die php class PHPSonos nutzt um Sonos player via http Befehle von Loxone aus zu steuern. 
 
-## Installation 
+### Installation 
 
 Sicherstellen dass das Verzeichnis in dem die Skript Dateien liegen vom php fähigen Webserver ausgeführt werden können (DEIN_VERZEICHNIS)
 
-## Konfiguration 
+### Konfiguration 
 Die Konfiguration wird in der config.php durchgeführt. 
 Füge in der config.php deine Sonos Zonen inkl. IP-Adressen und auch deine gewünschten Radiostation hinzu.
 Der Pfad für die Nachrichten bzw. Text-To-Speech (TTS) Dateien muss für Sonos erreichbar sein.
