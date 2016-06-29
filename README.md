@@ -106,17 +106,17 @@ http://DEINE_IP/DEIN_VERZEICHNIS/index.php?zone=DEINE_ZONE&action=stop&stopall
 ###### Gruppiert alle Zonen
 http://DEINE_IP/DEIN_VERZEICHNIS/index.php?zone=DEINE_ZONE&action=group
 
-###### Hebt die Gruppierung wieder auf
+### Hebt die Gruppierung wieder auf
 http://DEINE_IP/DEIN_VERZEICHNIS/index.php?zone=DEINE_ZONE&action=ungroup
 
 ## weather-to-speech (in Verbindung mit wunderground.com [NUR API key benötigt])
 
 je nach Tageszeit werden unterschiedliche Wettervorhersagen erstellt und per TTS durchgegeben
 Regenwahrscheinlichkeit und Windwarnung nur ab überschreiten von Grenzwerten (siehe config.php)
-# Ansagetexte können in der Datei 'w2s.php' individualisiert werden (VORSICHT!!
+Ansagetexte können in der Datei 'w2s.php' individualisiert werden (VORSICHT!!
 http://DEINE_IP/DEIN_VERZEICHNIS/index.php?zone=DEINE_ZONE&action=sendmessage&weather&volume=30
 
-## clock-to-speech (Die Uhrzeit + Anrede werden über TTS ausgegeben )
+## clock-to-speech (Die Uhrzeit + Anrede werden über TTS ausgegeben)
 Ansagetexte können in der Datei 'c2s.php' individualisiert werden (VORSICHT!!
 http://DEINE_IP/DEIN_VERZEICHNIS/index.php?zone=DEINE_ZONE&action=sendmessage&clock&volume=20
 
