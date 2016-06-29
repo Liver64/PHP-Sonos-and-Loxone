@@ -206,8 +206,10 @@ keine bekannten
 
 #### Danke an
 
-thanks to Stefan Nikolaus and Thomas Trautner for there coding
+thanks to Stefan Nikolaus, Thomas Trautner and Patrick (patriwag) for there coding
 
-#### Nächste Aktionen
+#### Link zu Beitrag im Forum
+
+https://www.loxforum.com/forum/german/software-konfiguration-programm-und-visualisierung/18094-sonos-mittels-php-skript-steuern
 
 
