@@ -146,7 +146,7 @@ und Haken bei "Verbindung nach senden schließen" setzen
 Ausgangsbefehl hinzufügen = /DEIN_VERZEICHNIS/index.php?zone=DEINE_ZONE&action=play
 etc.
 
-Titel und Interpret können jetzt auch getrennt in Loxone verwendet werden
+Titel und Interpret können jetzt auch getrennt in Loxone verwendet werden.
 `http://DEINE_IP/DEIN_VERZEICHNIS/index.php?zone=DEINE_ZONE&action=loxgettitel`
 
 Der Text Eingangsverbinder für die Kombination lautet: S-Titel<ZONE>
