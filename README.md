@@ -1,4 +1,4 @@
-## Sonos http Befehle rund um Loxone
+** Sonos http Befehle rund um Loxone**
 
 
 ### Einleitung 
@@ -26,40 +26,40 @@ Unbedingt sicherstellen das dein Webserver User Schreibrechte für DEIN_VEREICHNI
 Syntax Beispiele für Browser:
 
 ##### Setzt den Playmode. Erlaubte Möglichkeiten sind: NORMAL, REPEAT_ALL, SHUFFLE und SHUFFLE_NOREPEAT
-http://DEINE_IP/DEIN_VERZEICHNIS/index.php?zone=DEINE_ZONE&action=playmode&playmode=normal
+`http://DEINE_IP/DEIN_VERZEICHNIS/index.php?zone=DEINE_ZONE&action=playmode&playmode=normal`
 
 ##### Entfernt Track Nr. 1 von der laufenden Playliste
-http://DEINE_IP/DEIN_VERZEICHNIS/index.php?zone=DEINE_ZONE&action=remove&track=1
+`http://DEINE_IP/DEIN_VERZEICHNIS/index.php?zone=DEINE_ZONE&action=remove&track=1`
 
 ##### Setzt die Lautstärke fix auf 30 %
-http://DEINE_IP/DEIN_VERZEICHNIS/index.php?zone=DEINE_ZONE&action=volume&volume=30
+`http://DEINE_IP/DEIN_VERZEICHNIS/index.php?zone=DEINE_ZONE&action=volume&volume=30`
 
 ##### Spielt nächsten Radio Sender aus der Liste in config.php
-http://DEINE_IP/DEIN_VERZEICHNIS/index.php?zone=DEINE_ZONE&action=nextradio
+`http://DEINE_IP/DEIN_VERZEICHNIS/index.php?zone=DEINE_ZONE&action=nextradio`
 
 ##### Spielt vorherigen Radio Sender aus der Liste in config.php
-http://DEINE_IP/DEIN_VERZEICHNIS/index.php?zone=DEINE_ZONE&action=previousradio
+`http://DEINE_IP/DEIN_VERZEICHNIS/index.php?zone=DEINE_ZONE&action=previousradio`
 
 ##### Startet play mit Lautstärke 20% und der Lautstärkeanhebung 'alarm'
-http://DEINE_IP/DEIN_VERZEICHNIS/index.php?zone=DEINE_ZONE&action=play&Volume=20&rampto=alarm
+`http://DEINE_IP/DEIN_VERZEICHNIS/index.php?zone=DEINE_ZONE&action=play&Volume=20&rampto=alarm`
 
 ##### Folgende action sind möglich: toggle, stop, next, pause, previous, rewind, 
-http://DEINE_IP/DEIN_VERZEICHNIS/index.php?zone=DEINE_ZONE&action=stop
+`http://DEINE_IP/DEIN_VERZEICHNIS/index.php?zone=DEINE_ZONE&action=stop
 
 ##### Laustärke wird innerhalb 17 Sekunden linear auf Null gefahren (Art Schlummerfunktion) und Wiedergabe gestoppt
-http://DEINE_IP/DEIN_VERZEICHNIS/index.php?zone=DEINE_ZONE&action=softstop
+`http://DEINE_IP/DEIN_VERZEICHNIS/index.php?zone=DEINE_ZONE&action=softstop
 
 ##### Setzt angegebene Zone auf mute wenn Wert true, unmute mit Wert false
-http://DEINE_IP/DEIN_VERZEICHNIS/index.php?zone=DEINE_ZONE&action=mute&mute=true
+http://DEINE_IP/DEIN_VERZEICHNIS/index.php?zone=DEINE_ZONE&action=mute&mute=true`
 
 ##### Lautstärke leiser (die Schritt Vorgabe wird in Prozent in der config.php gepflegt)
-http://DEINE_IP/DEIN_VERZEICHNIS/index.php?zone=DEINE_ZONE&action=volumedown
+`http://DEINE_IP/DEIN_VERZEICHNIS/index.php?zone=DEINE_ZONE&action=volumedown`
 
 ##### Lautstärke lauter (die Schritt Vorgabe wird in Prozent in der config.php gepflegt)
-http://DEINE_IP/DEIN_VERZEICHNIS/index.php?zone=DEINE_ZONE&action=volumeup
+`http://DEINE_IP/DEIN_VERZEICHNIS/index.php?zone=DEINE_ZONE&action=volumeup`
 
 ##### Löschen der laufenden Playliste
-http://DEINE_IP/DEIN_VERZEICHNIS/index.php?zone=DEINE_ZONE&action=clearqueue
+`http://DEINE_IP/DEIN_VERZEICHNIS/index.php?zone=DEINE_ZONE&action=clearqueue`
 
 ##### Spielt MP3 Datei ohne jingle/gong vor der Durchsage
 Stoppt gegenwärtig laufende Playliste/Radiostation, speichert die Lautstärke und Playliste/Radiostation, setzt die Lautstärke auf 30%, spielt die Datei 1.mp3 die im Ordner 'messagepath' gespeichert ist,
@@ -126,7 +126,7 @@ folgende actions könnengenutzt werden: getmedianfo, getpositioninfo, gettranspor
 getradiotimegetnowplaying, getvolume, radiourl, titelinfo, getledstate, getzoneattributes
 http://DEINE_IP/DEIN_VERZEICHNIS/sonos2.php?zone=DEINE_ZONE&action=getmedianfo
 
-###### Zur detaillierten Fehlersuche kann auch folgende Syntax genutzt werden:
+##### Zur detaillierten Fehlersuche kann auch folgende Syntax genutzt werden:
 In der Syntax 'sonos2.php' durch 'index.php' ersetzen
 http://DEINE_IP/DEIN_VERZEICHNIS/index.php?zone=DEINE_ZONE&action=play
 
