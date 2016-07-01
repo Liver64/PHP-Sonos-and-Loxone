@@ -116,23 +116,23 @@ und die Playliste/Radiostation wird nur geladen.
 ### weather-to-speech (in Verbindung mit wunderground.com [NUR API key benötigt])
 je nach Tageszeit werden unterschiedliche Wettervorhersagen erstellt und per TTS durchgegeben
 Regenwahrscheinlichkeit und Windwarnung nur ab überschreiten von Grenzwerten (siehe config.php)
-Ansagetexte können in der Datei 'w2s.php' individualisiert werden (VORSICHT!!
+Ansagetexte können in der Datei 'w2s.php' individualisiert werden.
 `http://DEINE_IP/DEIN_VERZEICHNIS/index.php?zone=DEINE_ZONE&action=sendmessage&weather&volume=30`
 
 ### clock-to-speech (Die Uhrzeit + Anrede werden über TTS ausgegeben)
 Ansagetexte können in der Datei 'c2s.php' individualisiert werden (VORSICHT!!
-http://DEINE_IP/DEIN_VERZEICHNIS/index.php?zone=DEINE_ZONE&action=sendmessage&clock&volume=20
+`http://DEINE_IP/DEIN_VERZEICHNIS/index.php?zone=DEINE_ZONE&action=sendmessage&clock&volume=20`
 
 
 
 ### Syntax zur Info oder Fehlersuche (nur in Browser zu nutzen)
 folgende actions könnengenutzt werden: getmedianfo, getpositioninfo, gettransportsettings, gettransportinfo,
 getradiotimegetnowplaying, getvolume, radiourl, titelinfo, getledstate, getzoneattributes
-http://DEINE_IP/DEIN_VERZEICHNIS/sonos2.php?zone=DEINE_ZONE&action=getmedianfo
+`http://DEINE_IP/DEIN_VERZEICHNIS/sonos2.php?zone=DEINE_ZONE&action=getmedianfo`
 
 ##### Zur detaillierten Fehlersuche kann auch folgende Syntax genutzt werden:
 In der Syntax 'sonos2.php' durch 'index.php' ersetzen
-http://DEINE_IP/DEIN_VERZEICHNIS/index.php?zone=DEINE_ZONE&action=play
+`http://DEINE_IP/DEIN_VERZEICHNIS/index.php?zone=DEINE_ZONE&action=play`
 
 
 
@@ -147,7 +147,7 @@ Ausgangsbefehl hinzufügen = /DEIN_VERZEICHNIS/index.php?zone=DEINE_ZONE&action=p
 etc.
 
 Titel und Interpret können jetzt auch getrennt in Loxone verwendet werden
-http://DEINE_IP/DEIN_VERZEICHNIS/index.php?zone=DEINE_ZONE&action=loxgettitel
+`http://DEINE_IP/DEIN_VERZEICHNIS/index.php?zone=DEINE_ZONE&action=loxgettitel`
 
 Der Text Eingangsverbinder für die Kombination lautet: S-Titel<ZONE>
 Der Text Eingangsverbinder für den Titel lautet: S-Titelinfo<ZONE>
@@ -158,24 +158,24 @@ Der Text Eingangsverbinder für den Interpret lautet: S-Interpretinfo<ZONE>
 ### NEUE FUNKTIONEN v1.4.9
 
 ##### Gibt den gegenwärtigen Mute Status einer Gruppe zurück
-http://DEINE_IP/DEIN_VERZEICHNIS/index.php?zone=DEINE_ZONE&action=getgroupmute
+`http://DEINE_IP/DEIN_VERZEICHNIS/index.php?zone=DEINE_ZONE&action=getgroupmute`
 
 ##### Setzt den Mute Status für eine Gruppe (1=Mute, 0=Unmute)
-http://DEINE_IP/DEIN_VERZEICHNIS/index.php?zone=DEINE_ZONE&action=setgroupmute&mute=1
+`http://DEINE_IP/DEIN_VERZEICHNIS/index.php?zone=DEINE_ZONE&action=setgroupmute&mute=1`
 
 ##### Gibt die gegenwärtige mittlere Lautstärke einer Gruppe zurück
-http://DEINE_IP/DEIN_VERZEICHNIS/index.php?zone=DEINE_ZONE&action=getgroupvolume
+`http://DEINE_IP/DEIN_VERZEICHNIS/index.php?zone=DEINE_ZONE&action=getgroupvolume`
 
 ##### Setzt die angegebene Lautstärke für eine Gruppe auf 40% (Master muss DEINE_ZONE sein)
-http://DEINE_IP/DEIN_VERZEICHNIS/index.php?zone=DEINE_ZONE&action=setgroupvolume&volume=40
+`http://DEINE_IP/DEIN_VERZEICHNIS/index.php?zone=DEINE_ZONE&action=setgroupvolume&volume=40`
 
 ##### Erhöht die jeweilige Lautstärke je Zone einer Gruppe um 20% (Master muss DEINE_ZONE sein)
 ACHTUNG! Basierend auf derzeitiger Lautstärke wird LS um Wert x erhöht (könnte u.U. laut werden)
-http://DEINE_IP/DEIN_VERZEICHNIS/index.php?zone=DEINE_ZONE&action=setrelativegroupvolume&volume=20
+`http://DEINE_IP/DEIN_VERZEICHNIS/index.php?zone=DEINE_ZONE&action=setrelativegroupvolume&volume=20`
 
 ##### Setzt den Schlummermodus für angegebene Zone auf 5 Minuten. Bei kleiner 10 Minuten nur einstellige Eingabe Bsp.:5 für 5 Minuten) 
 generell erlaubte Eingabe: 1-59
-http://DEINE_IP/DEIN_VERZEICHNIS/index.php?zone=DEINE_ZONE&action=sleeptimer&timer=5
+`http://DEINE_IP/DEIN_VERZEICHNIS/index.php?zone=DEINE_ZONE&action=sleeptimer&timer=5`
 
 
 ### NEUE FUNKTIONEN v1.5.0
@@ -193,13 +193,13 @@ Bsp.: Bei der unten aufgeführten Syntax werden zuerst die gegenwärtigen Zustände
 anschließend werden die Zonen gruppiert, die T2S Lautstärke aus der config.php je Zone gesetzt, dann aber die Lautstärke um 15% zusätzlich angehoben.
 ACHTUNG: Der Parameter groupvolume erhöht die Lautstärke je Zone um den angegebenen Wert!!!!!!!!
 Dann wird die T2S in der Gruppe abgespielt und anschließend wird die Gruppe wieder aufgelöst und der Originalzustand je Zone geladen.
-http://DEINE_IP/DEIN_VERZEICHNIS/index.php?zone=DEINE_ZONE&action=sendgroupmessage&member=wohnen,kueche,schlafen&text=dies ist ein Test&groupvolume=15
+`http://DEINE_IP/DEIN_VERZEICHNIS/index.php?zone=DEINE_ZONE&action=sendgroupmessage&member=wohnen,kueche,schlafen&text=dies ist ein Test&groupvolume=15`
 
 ##### Lädt eine Sonos Playliste in eine Gruppe von Zonen
-http://DEINE_IP/DEIN_VERZEICHNIS/index.php?zone=DEINE_ZONE&action=groupsonosplaylist&member=wohnen,kueche,schlafen&playlist=<NAME PLAYLISTE>
+`http://DEINE_IP/DEIN_VERZEICHNIS/index.php?zone=DEINE_ZONE&action=groupsonosplaylist&member=wohnen,kueche,schlafen&playlist=<NAME PLAYLISTE>`
 
 ##### Lädt einen Radiosender in eine Gruppe von Zonen
-http://DEINE_IP/DEIN_VERZEICHNIS/index.php?zone=DEINE_ZONE&action=groupradioplaylist&member=wohnen,kueche,schlafen&playlist=<NAME RADIOSENDER>
+`http://DEINE_IP/DEIN_VERZEICHNIS/index.php?zone=DEINE_ZONE&action=groupradioplaylist&member=wohnen,kueche,schlafen&playlist=<NAME RADIOSENDER>`
 
 
 
@@ -214,6 +214,6 @@ thanks to Stefan Nikolaus, Thomas Trautner and Patrick (patriwag) for there codi
 
 #### Link zu Beitrag im Forum
 
-https://www.loxforum.com/forum/german/software-konfiguration-programm-und-visualisierung/18094-sonos-mittels-php-skript-steuern
+`https://www.loxforum.com/forum/german/software-konfiguration-programm-und-visualisierung/18094-sonos-mittels-php-skript-steuern`
 
 
