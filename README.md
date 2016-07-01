@@ -47,11 +47,11 @@ Syntax Beispiele für Browser:
 ##### Startet play mit Lautstärke 20% und der Lautstärkeanhebung 'alarm'
 `http://DEINE_IP/DEIN_VERZEICHNIS/index.php?zone=DEINE_ZONE&action=play&Volume=20&rampto=alarm`
 
-##### Folgende action sind möglich: toggle, stop, next, pause, previous, rewind, 
-`http://DEINE_IP/DEIN_VERZEICHNIS/index.php?zone=DEINE_ZONE&action=stop
+##### Folgende action sind möglich: toggle, stop, next, pause, previous, rewind 
+`http://DEINE_IP/DEIN_VERZEICHNIS/index.php?zone=DEINE_ZONE&action=stop`
 
 ##### Laustärke wird innerhalb 17 Sekunden linear auf Null gefahren (Art Schlummerfunktion) und Wiedergabe gestoppt
-`http://DEINE_IP/DEIN_VERZEICHNIS/index.php?zone=DEINE_ZONE&action=softstop
+`http://DEINE_IP/DEIN_VERZEICHNIS/index.php?zone=DEINE_ZONE&action=softstop`
 
 ##### Setzt angegebene Zone auf mute wenn Wert true, unmute mit Wert false
 http://DEINE_IP/DEIN_VERZEICHNIS/index.php?zone=DEINE_ZONE&action=mute&mute=true`
@@ -69,11 +69,11 @@ http://DEINE_IP/DEIN_VERZEICHNIS/index.php?zone=DEINE_ZONE&action=mute&mute=true
 Stoppt gegenwärtig laufende Playliste/Radiostation, speichert die Lautstärke und Playliste/Radiostation, setzt die Lautstärke auf 30%, spielt die Datei 1.mp3 die im Ordner 'messagepath' gespeichert ist,
 nach dem Abspielen wird die vorherige Playliste/Radiostation wieder geladen und mit der vorher gespeicherten Lautstärke wieder abgespielt.
 Wenn aktuell nichts läuft, denn noch eine Playliste/Radiostation in der Zone aktiv ist, bleibt die Zone stumm und die Playliste/Radiostation wird nur geladen.
-http://DEINE_IP/DEIN_VERZEICHNIS/index.php?zone=DEINE_ZONE&volume=30&action=sendmessage&messageid=1
+`http://DEINE_IP/DEIN_VERZEICHNIS/index.php?zone=DEINE_ZONE&volume=30&action=sendmessage&messageid=1`
 
 ##### Spielt MP3 Datei mit jingle/gong vor der Durchsage
 Stoppt gegenwärtig laufende Playliste/Radiostation, speichert die Lautstärke und Playliste/Radiostation, setzt die Lautstärke auf 40%, spielt vorher ein Jingle/Gong MP3 ab, spielt dann die Datei 1.mp3 die im Ordner 'messagepath' gespeichert ist, nach dem Abspielen wird die vorherige Playliste/Radiostation wieder geladen und mit der vorher gespeicherten Lautstärke wieder abgespielt. Wenn aktuell nichts läuft, denn noch eine Playliste/Radiostation in der Zone aktiv ist, bleibt die Zone stumm und die Playliste/Radiostation wird nur geladen.
-http://DEINE_IP/DEIN_VERZEICHNIS/index.php?zone=DEINE_ZONE&volume=40&playgong=yes&action=sendmessage&messageid=1
+`http://DEINE_IP/DEIN_VERZEICHNIS/index.php?zone=DEINE_ZONE&volume=40&playgong=yes&action=sendmessage&messageid=1`
 
 ##### Spielt TTS Text ohne jingle/gong vor der Durchsage
 Stoppt gegenwärtig laufende Playliste/Radiostation, speichert die Lautstärke und Playliste/Radiostation, 
@@ -84,40 +84,40 @@ Wenn aktuell nichts läuft, denn noch eine Playliste/Radiostation in der Zone akt
 und die Playliste/Radiostation wird nur geladen.
 
 ##### Für Loxone kann auch beim analogen Ausgangsbefehl der Parameter <v> für Durchsagen verwendet werden.
-http://DEINE_IP/DEIN_VERZEICHNIS/index.php?zone=DEINE_ZONE&volume=20&action=sendmessage&text=Dies ist ein Test
+`http://DEINE_IP/DEIN_VERZEICHNIS/index.php?zone=DEINE_ZONE&volume=20&action=sendmessage&text=Dies ist ein Test`
 
 ##### Fügt der angegebenen Zone eine weitere hinzu
-http://DEINE_IP/DEIN_VERZEICHNIS/index.php?zone=DEINE_ZONE&action=addmember&member=ANDERE_ZONE
+`http://DEINE_IP/DEIN_VERZEICHNIS/index.php?zone=DEINE_ZONE&action=addmember&member=ANDERE_ZONE`
 
 ##### Löscht aus der Gruppe die angegebenen Zone wieder
-http://DEINE_IP/DEIN_VERZEICHNIS/index.php?zone=DEINE_ZONE&action=removemember&member=ANDERE_ZONE
+`http://DEINE_IP/DEIN_VERZEICHNIS/index.php?zone=DEINE_ZONE&action=removemember&member=ANDERE_ZONE`
 
 ##### Lädt die angegebene Sonos Playliste und spielt Sie mit Lautstärke 15% ab
-http://DEINE_IP/DEIN_VERZEICHNIS/index.php?zone=DEINE_ZONE&action=sonosplaylist&playlist=NAME_DER_PLAYLISTE&volume=15
+`http://DEINE_IP/DEIN_VERZEICHNIS/index.php?zone=DEINE_ZONE&action=sonosplaylist&playlist=NAME_DER_PLAYLISTE&volume=15`
 
 ##### Lädt die angegebene Radioliste unter "Meine Radiosender" aus Sonos 
-http://DEINE_IP/DEIN_VERZEICHNIS/index.php?zone=DEINE_ZONE&action=radioplaylist&playlist=NAME_DER_RADIOSTATION&volume=15
+`http://DEINE_IP/DEIN_VERZEICHNIS/index.php?zone=DEINE_ZONE&action=radioplaylist&playlist=NAME_DER_RADIOSTATION&volume=15`
 
 ##### ändert die Lautstärkeanhebung bei Play (siehe config.php) sleep, alarm und auto sind erlaubt
-http://DEINE_IP/DEIN_VERZEICHNIS/index.php?zone=DEINE_ZONE&action=play&rampto=sleep
+`http://DEINE_IP/DEIN_VERZEICHNIS/index.php?zone=DEINE_ZONE&action=play&rampto=sleep`
 
 ##### Crossfade 1 schaltet Überblenden ein, 0 schaltet Überblenden aus
-http://DEINE_IP/DEIN_VERZEICHNIS/index.php?zone=DEINE_ZONE&action=crossfade&crossfade=1
+`http://DEINE_IP/DEIN_VERZEICHNIS/index.php?zone=DEINE_ZONE&action=crossfade&crossfade=1`
 
 ##### Stoppt alle Zonen
-http://DEINE_IP/DEIN_VERZEICHNIS/index.php?zone=DEINE_ZONE&action=stop&stopall
+`http://DEINE_IP/DEIN_VERZEICHNIS/index.php?zone=DEINE_ZONE&action=stop&stopall`
 
 ##### Gruppiert alle Zonen
-http://DEINE_IP/DEIN_VERZEICHNIS/index.php?zone=DEINE_ZONE&action=group
+`http://DEINE_IP/DEIN_VERZEICHNIS/index.php?zone=DEINE_ZONE&action=group`
 
 ##### Hebt die Gruppierung wieder auf
-http://DEINE_IP/DEIN_VERZEICHNIS/index.php?zone=DEINE_ZONE&action=ungroup
+`http://DEINE_IP/DEIN_VERZEICHNIS/index.php?zone=DEINE_ZONE&action=ungroup`
 
 ### weather-to-speech (in Verbindung mit wunderground.com [NUR API key benötigt])
 je nach Tageszeit werden unterschiedliche Wettervorhersagen erstellt und per TTS durchgegeben
 Regenwahrscheinlichkeit und Windwarnung nur ab überschreiten von Grenzwerten (siehe config.php)
 Ansagetexte können in der Datei 'w2s.php' individualisiert werden (VORSICHT!!
-http://DEINE_IP/DEIN_VERZEICHNIS/index.php?zone=DEINE_ZONE&action=sendmessage&weather&volume=30
+`http://DEINE_IP/DEIN_VERZEICHNIS/index.php?zone=DEINE_ZONE&action=sendmessage&weather&volume=30`
 
 ### clock-to-speech (Die Uhrzeit + Anrede werden über TTS ausgegeben)
 Ansagetexte können in der Datei 'c2s.php' individualisiert werden (VORSICHT!!
