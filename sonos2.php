@@ -2,8 +2,8 @@
 
 ##############################################################################################################################
 #
-# Version: 	1.5.1
-# Datum: 	23.06.2016
+# Version: 	1.5.2
+# Datum: 	16.07.2016
 # veröffentlicht in forum: https://www.loxforum.com/
 # 
 # Historie:
@@ -84,6 +84,7 @@
 #			Zusätzlich gibt es am Ende der Syntax den Parameter "groupvolume", der die Volume default Werte aus der config.php um den angegebenen Prozentwert erhöht.
 #			- groupsonosplaylist = spielt eine Sonos Playliste in einer Gruppe von Zonen ab	 (analog zu sonosplaylist für einzelne Zone)
 #			- groupradioplaylist = spielt einen ausgewählten Radiosender in einer Gruppe von Zonen ab (analog zu radioplaylist für einzelne Zone)
+# 1.5.2		Spotify hinzugefügt
 #			
 # bekannte Probleme:	derzeit keine
 # 						
@@ -1435,6 +1436,7 @@ function creategroup($member,$groupvol = "0") {
 	foreach ($member as $zone) {
 		$sonos = new PHPSonos($sonoszone[$zone][0]);
 		$sonos->SetAVTransportURI("x-rincon:" . $masterrincon); 
+		#$sonos->AddMember($zone); 
 	}
 	return array($membermaster); // gibt member und master zurück
 }
@@ -1474,7 +1476,10 @@ function removegroup($membermaster) {
 		$sonos = new PHPSonos($sonoszone[$zone][0]); //Sonos IP Adresse
 		# zum Wiederherstellen es lief:
 		# Playliste
-		if (substr($import[$zone]['PositionInfo']["TrackURI"], 0, 5) == "npsdy" || substr($import[$zone]['PositionInfo']["TrackURI"], 0, 11) == "x-file-cifs" || substr($import[$zone]['PositionInfo']["TrackURI"], 0, 12) == "x-sonos-http") { // Es läuft eine Musikliste
+		if (substr($import[$zone]['PositionInfo']["TrackURI"], 0, 5) == "npsdy" || 
+			substr($import[$zone]['PositionInfo']["TrackURI"], 0, 11) == "x-file-cifs" || 
+			substr($import[$zone]['PositionInfo']["TrackURI"], 0, 12) == "x-sonos-http" || 
+			substr($import[$zone]['PositionInfo']["TrackURI"], 0, 15) == "x-sonos-spotify") { // Es läuft eine Musikliste
 			$sonos->SetTrack($import[$zone]['PositionInfo']['Track']);
 			$sonos->Seek($import[$zone]['PositionInfo']['RelTime'],"NONE");
 				if($import[$zone]['TransportSettings']['shuffle'] == 1) {
@@ -1590,7 +1595,10 @@ function save_current_status_single() {
 		$sonos->SetQueue("x-rincon-queue:" . getRINCON($sonoszone[$master][0]) . "#0"); //Playliste aktivieren
 	}
 	# Wenn Playliste läuft erst den Playmodus auf Normal setzen
-	if (substr($save_status['PositionInfo']["TrackURI"], 0, 5) == "npsdy" || substr($save_status['PositionInfo']["TrackURI"], 0, 11) == "x-file-cifs" || substr($save_status['PositionInfo']["TrackURI"], 0, 12) == "x-sonos-http") { // Es läuft eine Musikliste
+	if (substr($save_status['PositionInfo']["TrackURI"], 0, 5) == "npsdy" || 
+		substr($save_status['PositionInfo']["TrackURI"], 0, 11) == "x-file-cifs" || 
+		substr($save_status['PositionInfo']["TrackURI"], 0, 12) == "x-sonos-http" || 
+		substr($save_status['PositionInfo']["TrackURI"], 0, 15) == "x-sonos-spotify") { // Es läuft eine Musikliste
 		$sonos->SetPlayMode('NORMAL');
 		}
 	return ($save_status);
@@ -1600,7 +1608,10 @@ function save_current_status_single() {
 function restore_org_settings_single($save_status) {
 	global $save_status, $sonos, $rampsleep;
 	# Playliste
-	if (substr($save_status['PositionInfo']["TrackURI"], 0, 5) == "npsdy" || substr($save_status['PositionInfo']["TrackURI"], 0, 11) == "x-file-cifs" || substr($save_status['PositionInfo']["TrackURI"], 0, 12) == "x-sonos-http") { // Es läuft eine Musikliste
+	if (substr($save_status['PositionInfo']["TrackURI"], 0, 5) == "npsdy" || 
+		substr($save_status['PositionInfo']["TrackURI"], 0, 11) == "x-file-cifs" || 
+		substr($save_status['PositionInfo']["TrackURI"], 0, 12) == "x-sonos-http" || 
+		substr($save_status['PositionInfo']["TrackURI"], 0, 15) == "x-sonos-spotify") { // Es läuft eine Musikliste
 		$sonos->SetTrack($save_status['PositionInfo']["Track"]);
 		$sonos->Seek($save_status['PositionInfo']["RelTime"],"NONE");
 		if($save_status['TransportSettings']['shuffle'] == 1) {
