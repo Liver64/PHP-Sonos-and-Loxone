@@ -85,6 +85,7 @@
 #			- groupsonosplaylist = spielt eine Sonos Playliste in einer Gruppe von Zonen ab	 (analog zu sonosplaylist für einzelne Zone)
 #			- groupradioplaylist = spielt einen ausgewählten Radiosender in einer Gruppe von Zonen ab (analog zu radioplaylist für einzelne Zone)
 # 1.5.2		Spotify hinzugefügt
+#			- Korrektur Groupvolume
 #			
 # bekannte Probleme:	derzeit keine
 # 						
@@ -634,11 +635,6 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 				die("Die Angabe des Parameters Volume ist innerhalb dieser Syntax nicht zulässig!");
 				exit;
 			}
-			// erhöht die Defaultwerte aus der config.php um xx Prozent
-			if(isset($_GET['groupvolume']) && is_numeric($_GET['groupvolume']) && $_GET['groupvolume'] >= 0 && $_GET['groupvolume'] <= 100) {
-				$groupvolume = $_GET['groupvolume'];
-				SetGroupVolume($groupvolume);
-			}
 			if(isset($_GET['groupvolume']) && $_GET['groupvolume'] > 100) {
 				die("Der angegebene Wert für groupvolume ist nicht gültig. Erlaubte Werte sind 0 bis 100, bitte prüfen!");
 				exit;
@@ -647,21 +643,23 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 			$groupvol = "1";
 			// Gruppe erstellen, vorher Zustand der Zonen in JSON Datei speichern
 			creategroup($membermaster, $groupvol);
-			$sonos->Stop();
 			// Alle Zonen auf Mute
 			$sonos = new PHPSonos($sonoszone[$master][0]);
 			$sonos->SetGroupMute(true);
-			// T2S erstellen und abspielen
+			// T2S erstellen
 			create_tts($text, $messageid);
-			sleep($config['sleepgroupmessage']); // warten gemäß config.php
+			#sleep($config['sleepgroupmessage']); // warten gemäß config.php
 			// setzen der T2S Lautstärke je Zone
 			foreach ($membermaster as $player => $zone) {
 				$sonos = new PHPSonos($sonoszone[$zone][0]); 
 				$sonos->SetVolume($config['sonoszone'][$zone][1]);
 			}
-			//Gruppen Mute aufheben
-			$sonos = new PHPSonos($sonoszone[$master][0]);
-			$sonos->SetGroupMute(false);
+			// erhöht die Defaultwerte aus der config.php um xx Prozent
+			if(isset($_GET['groupvolume']) && is_numeric($_GET['groupvolume']) && $_GET['groupvolume'] >= 0 && $_GET['groupvolume'] <= 100) {
+				$groupvolume = $_GET['groupvolume'];
+				SetGroupVolume($groupvolume);
+			}
+			// T2S abspielen (Gruppenmute wird in play_tts aufgehoben)
 			play_tts($messageid, $groupvol);
 			// Gruppe auflösen, JSON Datei einlesen und Ursprungszustand je Zone wiederherstellen
 			removegroup($membermaster);
@@ -1297,13 +1295,14 @@ function File_Get_Array_From_JSON($FileName, $zip=false) {
 
  function SetGroupVolume($groupvolume) {
 	global $sonos;
+	$sonos->SnapshotGroupVolume();
 	$GroupVolume = $_GET['groupvolume'];
 	$GroupVolume = $sonos->SetGroupVolume($GroupVolume);
  }
 
 function SetRelativeGroupVolume($volume) {
 	global $sonos;
-	SnapshotGroupVolume();
+	$sonos->SnapshotGroupVolume();
 	$RelativeGroupVolume = $_GET['groupvolume'];
 	$RelativeGroupVolume = $sonos->SetRelativeGroupVolume($RelativeGroupVolume);
 }
@@ -1531,6 +1530,7 @@ function play_tts($messageid, $groupvol) {
 			$message_pos = count($save_status['CurrentPlaylist']) + 1;
 		}
 		$sonos->SetQueue("x-rincon-queue:" . getRINCON($sonoszone[$master][0]) . "#0"); //Playliste aktivieren
+		$sonos->SetGroupMute(false);
 		$sonos->SetTrack($message_pos);
 		$sonos->Play();   // Abspielen
 		$abort = false;
@@ -1556,6 +1556,7 @@ function play_tts($messageid, $groupvol) {
 			$message_pos = count($save_status['CurrentPlaylist']) + 1;#['CurrentPlaylist']
 		}
 		$sonos->SetQueue("x-rincon-queue:" . getRINCON($sonoszone[$master][0]) . "#0"); //Playliste aktivieren
+		$sonos->SetGroupMute(false);
 		$sonos->SetTrack($message_pos);
 		$sonos->Play();   // Abspielen
 		$abort = false;
