@@ -2,8 +2,8 @@
 
 ##############################################################################################################################
 #
-# Version: 		1.1.5
-# Datum: 		23.06.2016
+# Version: 		1.2.0
+# Datum: 		05.09.2016
 # veröffentlicht in forum: https://www.loxforum.com/
 # 
 # Historie:
@@ -15,6 +15,7 @@
 # 1.1.4		Parameter für Mac OS X TTS Engine ergänzt
 # 1.1.5		Neuer Parameter für die Wartezeit in Sekunden bei sendgroupmessage bevor der Gruppenmute vor T2S aufgehoben wird. (Z. 121)
 #			Default Lautstärke Parameter für T2S und Sonos je Zone hinzugefügt (siehe sonoszone)
+# 1.2.0		Neuer Paramter 'MP3path' als Speicherort für MP3 files die über 'messageid' abgerufen werden
 #
 #
 # bekannte Probleme: derzeit keine
@@ -95,7 +96,10 @@ $config = array(
 	####################################################################################################
 
 	# Pfad zu deinem Speichermedium von dem Sonos die Nachrichen abspielt
-    'messagespath'   => '//syn-ds415/music/tts/',	# Windows Backslash \\ und Slash \ in Pfadangaben durch // und / ersetzen ohne 											Slash am Ende
+    'messagespath'   => '//syn-ds415/music/tts/',	# Windows Backslash \\ und Slash \ in Pfadangaben durch // und / ersetzen ohne Slash am Ende
+	# Unterverzeichnis für gespeicherte MP3 Dateien 
+	# (nur für Funktion: messageid). Wird dieser Parameter LEER gelassen wird im Verzeichnis 'messagespath' nach den Dateien gesucht.
+	'MP3path' 		=> '',						# das angelegte Verzeichnis ohne Slash oder Backslash eingeben
 
 	# Nur für User die ihre Skripte NICHT auf eine NAS( QNAP, Synology, etc.) gehostet haben!!!
 	# Der hier angegebene Pfad ist der Speicherort der T2S Engine für die gesendete MP3 Datei.
