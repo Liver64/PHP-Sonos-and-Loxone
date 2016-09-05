@@ -1518,15 +1518,20 @@ function play_tts($messageid, $groupvol) {
 		$sonos->SetMute(false);
 		$sonos->SetVolume($volume);
 	}
-	$mp3 = $_GET['messageid'];
-	if((!empty($config['MP3path'])) || (!empty($mp3))) {
-		$mpath = $config['messagespath']."/".$config['MP3path'];
+	if(isset($_GET['messageid'])) {
+		$mp3 = $_GET['messageid'];
+		if((!empty($config['MP3path'])) || (!empty($mp3))) {
+			$mpath = $config['messagespath']."/".$config['MP3path'];
+		} 
 	} else {
 		$mpath = $config['messagespath'];
 	}
 	$sonos = new PHPSonos($sonoszone[$master][0]); //Sonos IP Adresse
 	if(isset($_GET['playgong'])) {
 		if(isset($_GET['playgong']) && ($_GET['playgong'] == "yes")) {
+			if((!empty($config['MP3path'])) || (!empty($mp3))) {
+				$mpath = $config['messagespath']."/".$config['MP3path'];
+			}
 			$sonos->AddToQueue("x-file-cifs:" . $mpath . "/" . $config['file_gong'] . ".mp3");
 		}
 		if(isset($_GET['playgong']) && ($_GET['playgong'] == is_numeric($_GET['playgong']))) {
@@ -1561,10 +1566,12 @@ function play_tts($messageid, $groupvol) {
 		#-- Ende Jingle  ------------------------------------------------------------------------------------------
 									
 		#-- TTS Durchsage abspielen	--------------------------------------------------------------------------------
-		$mp3 = $_GET['messageid'];
-		if (is_numeric($mp3)) {
+		#$mp3 = $_GET['messageid'];
+		$mess = isset($_GET['sendmessage']);
+		print_r($mess);
+		if (!isset($_GET['messageid'])) {
 			$sonos = new PHPSonos($sonoszone[$master][0]); //Sonos IP Adresse
-			$sonos->AddToQueue("x-file-cifs:" . $mpath . "/" . $messageid . ".mp3");
+			$sonos->AddToQueue("x-file-cifs:" . $config['messagespath'] . "/" . $messageid . ".mp3");
 		} else {
 			$sonos = new PHPSonos($sonoszone[$master][0]); //Sonos IP Adresse
 			$sonos->AddToQueue("x-file-cifs:" . $mpath . "/" . $messageid . ".mp3");
