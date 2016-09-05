@@ -86,6 +86,8 @@
 #			- groupradioplaylist = spielt einen ausgewählten Radiosender in einer Gruppe von Zonen ab (analog zu radioplaylist für einzelne Zone)
 # 1.5.2		Spotify hinzugefügt
 #			- Korrektur Groupvolume
+#			- Korrektur Play()
+#			- Korrektur Playmode (Shuffle ausschalten) vor Gruppendurchsage
 #			
 # bekannte Probleme:	derzeit keine
 # 						
@@ -192,7 +194,8 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 	
 	switch($_GET['action'])	{
 		case 'play';
-			if(count($sonos->GetCurrentPlaylist()) > 0) { 
+			$posinfo = $sonos->GetPositionInfo();
+			if(!empty($posinfo['TrackURI'])) {
 			if($sonos->GetVolume() <= $config['volrampto']) {
 					$sonos->RampToVolume($config['rampto'], $volume);
 					$sonos->Play();
@@ -646,6 +649,7 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 			// Alle Zonen auf Mute
 			$sonos = new PHPSonos($sonoszone[$master][0]);
 			$sonos->SetGroupMute(true);
+			$sonos->SetPlayMode('NORMAL'); 
 			// T2S erstellen
 			create_tts($text, $messageid);
 			#sleep($config['sleepgroupmessage']); // warten gemäß config.php
