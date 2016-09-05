@@ -1512,13 +1512,18 @@ function removegroup($membermaster) {
 
 	
 function play_tts($messageid, $groupvol) {
-	global $volume, $config, $sonos, $messageid, $save_status, $sonoszone, $master, $groupvol;
+	global $volume, $config, $sonos, $messageid, $save_status, $sonoszone, $master, $groupvol, $getgroup, $group;
 	// wenn Single T2S dann Volume und Mute setzten
 	if($groupvol == "0") {
 		$sonos->SetMute(false);
 		$sonos->SetVolume($volume);
 	}
-	$mpath = $config['messagespath'];
+	$mp3 = $_GET['messageid'];
+	if((!empty($config['MP3path'])) || (!empty($mp3))) {
+		$mpath = $config['messagespath']."/".$config['MP3path'];
+	} else {
+		$mpath = $config['messagespath'];
+	}
 	$sonos = new PHPSonos($sonoszone[$master][0]); //Sonos IP Adresse
 	if(isset($_GET['playgong'])) {
 		if(isset($_GET['playgong']) && ($_GET['playgong'] == "yes")) {
@@ -1530,9 +1535,15 @@ function play_tts($messageid, $groupvol) {
 		if($groupvol == "1") {
 			$save_status = $sonos->GetCurrentPlaylist();
 			$message_pos = count($save_status);
-		} else {
+		// falls Zone in einer Gruppe der Master war
+		} elseif($group == "true") {
+			#echo 'Group: '.$group.'<br>';
+			$message_pos = count($save_status['CurrentPlaylist']) + 2; 
+		} elseif ($groupvol == "0") {
+			#echo 'Single Zone: '.$group.'<br>';
 			$message_pos = count($save_status['CurrentPlaylist']) + 1;
 		}
+		#$sonos = new PHPSonos($sonoszone[$master][0]);
 		$sonos->SetQueue("x-rincon-queue:" . getRINCON($sonoszone[$master][0]) . "#0"); //Playliste aktivieren
 		$sonos->SetGroupMute(false);
 		$sonos->SetTrack($message_pos);
@@ -1542,7 +1553,7 @@ function play_tts($messageid, $groupvol) {
 		# Prüfen ob Meldung zu Ende gespielt ist
 		sleep($config['sleeptimegong']); // warten gemäß config.php
 		while ($sonos->GetTransportInfo()==1) {
-		usleep(200000); // Alle 200ms wird abgefragt
+			usleep(200000); // Alle 200ms wird abgefragt
 		}
 		# Message wieder aus Queue entfernen
 		$sonos->RemoveFromQueue($message_pos); 
@@ -1550,25 +1561,38 @@ function play_tts($messageid, $groupvol) {
 		#-- Ende Jingle  ------------------------------------------------------------------------------------------
 									
 		#-- TTS Durchsage abspielen	--------------------------------------------------------------------------------
-		$sonos = new PHPSonos($sonoszone[$master][0]); //Sonos IP Adresse
-		$sonos->AddToQueue("x-file-cifs:" . $mpath . "/" . $messageid . ".mp3");
-		
+		$mp3 = $_GET['messageid'];
+		if (is_numeric($mp3)) {
+			$sonos = new PHPSonos($sonoszone[$master][0]); //Sonos IP Adresse
+			$sonos->AddToQueue("x-file-cifs:" . $mpath . "/" . $messageid . ".mp3");
+		} else {
+			$sonos = new PHPSonos($sonoszone[$master][0]); //Sonos IP Adresse
+			$sonos->AddToQueue("x-file-cifs:" . $mpath . "/" . $messageid . ".mp3");
+		}
+		#$save_status = $sonos->GetCurrentPlaylist();
 		if($groupvol == "1") {
 			$save_status = $sonos->GetCurrentPlaylist();
 			$message_pos = count($save_status);
-		} else {
-			$message_pos = count($save_status['CurrentPlaylist']) + 1;#['CurrentPlaylist']
+		// falls Zone in einer Gruppe der Master war
+		} elseif($group == "true") {
+			#echo 'Group: '.$group.'<br>';
+			$message_pos = count($save_status['CurrentPlaylist']) + 2; 
+		} elseif ($groupvol == "0") {
+			#echo 'Single Zone: '.$group.'<br>';
+			$message_pos = count($save_status['CurrentPlaylist']) + 1;
 		}
+		#$sonos = new PHPSonos($sonoszone[$master][0]);
+		
 		$sonos->SetQueue("x-rincon-queue:" . getRINCON($sonoszone[$master][0]) . "#0"); //Playliste aktivieren
 		$sonos->SetGroupMute(false);
 		$sonos->SetTrack($message_pos);
 		$sonos->Play();   // Abspielen
 		$abort = false;
-
+		
 		# Prüfen ob Meldung zu Ende gespielt ist
 		sleep($config['sleeptimegong']); // warten gemäﬂ config.php
 		while ($sonos->GetTransportInfo()==1) {
-		usleep(200000); // Alle 200ms wird abgefragt
+			usleep(200000); // Alle 200ms wird abgefragt
 		}
 		# Message wieder aus Queue entfernen
 		$sonos->RemoveFromQueue($message_pos); 
