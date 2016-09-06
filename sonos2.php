@@ -2,8 +2,8 @@
 
 ##############################################################################################################################
 #
-# Version: 	1.5.2
-# Datum: 	16.07.2016
+# Version: 	1.5.3
+# Datum: 	06.09.2016
 # veröffentlicht in forum: https://www.loxforum.com/
 # 
 # Historie:
@@ -84,10 +84,11 @@
 #			Zusätzlich gibt es am Ende der Syntax den Parameter "groupvolume", der die Volume default Werte aus der config.php um den angegebenen Prozentwert erhöht.
 #			- groupsonosplaylist = spielt eine Sonos Playliste in einer Gruppe von Zonen ab	 (analog zu sonosplaylist für einzelne Zone)
 #			- groupradioplaylist = spielt einen ausgewählten Radiosender in einer Gruppe von Zonen ab (analog zu radioplaylist für einzelne Zone)
-# 1.5.2		Spotify hinzugefügt
+# 1.5.2		Spotify für Wiederherstellung hinzugefügt
 #			- Korrektur Groupvolume
 #			- Korrektur Play()
 #			- Korrektur Playmode (Shuffle ausschalten) vor Gruppendurchsage
+# 1.5.3		neuer Folder für MP3 Dateien hinzugefügt	
 #			
 # bekannte Probleme:	derzeit keine
 # 						
