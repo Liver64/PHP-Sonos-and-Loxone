@@ -1,9 +1,9 @@
 <?php
-function c2s($text)
+function c2s($ttext)
 
 // clock-to-speech: Erstellt basierend auf der aktuellen Uhrzeit eine TTS Nachricht, übermittelt sie an VoiceRRS und 
 // speichert das zurückkommende file lokal ab
-// @Parameter = $text von sonos2.php
+// @Parameter = $ttext von sonos2.php
 {
 	global $debug;
 	
@@ -47,13 +47,13 @@ function c2s($text)
 		break;
 	}
 	
-	$text = $Vorspann." Es ist jetzt ".$Stunden." Uhr und ".$Minuten. " Minuten." .$Nachsatz;
-	$text = $text;
+	$ttext = $Vorspann." Es ist jetzt ".$Stunden." Uhr und ".$Minuten. " Minuten." .$Nachsatz;
+	$ttext = utf8_encode($ttext);
 	if ($debug == 1) 
 		{
-			echo ($text); 
+			echo ($ttext); 
 			echo '<br />';
 		}
-	return ($text);
+	return ($ttext);
 }	
 ?>

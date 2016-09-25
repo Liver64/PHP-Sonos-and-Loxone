@@ -2,7 +2,7 @@
 function w2s($text) 
 // weather-to-speech: Erstellt basierend auf Wunderground eine Wettervorhersage zur Generierung einer
 // TTS Nachricht, übermittelt sie an VoiceRRS und speichert das zurückkommende file lokal ab
-// @Parameter = $text
+// @Parameter = $text von sonos2.php
  	{
 		global $config, $debug;
 		
@@ -31,7 +31,7 @@ function w2s($text)
 			$path = $config['messageStorePath']; // Pfad aus config.php
 			$file = $path . "weather_raw_data.txt"; // Dateiname
 			file_put_contents($file, $json_fc_string); // je nach Typ ändern: json_fc_string = Vorschau; $json_hc_string = 10 Tage Vorschau; $json_string = aktuelles Wetter
-		## Ende Fehleranalyse
+			## Ende Fehleranalyse
 		}
 		
 		## Beginn abholen und aufbereiten der Wetterdaten
@@ -60,7 +60,7 @@ function w2s($text)
 		{
 			# Ersetzen der Windrichtungskürzel für Windrichtung
 			$search = array('W','S','N','O');
-			$replace = array('west','süd','nord','ost');
+			$replace = array('west','sued','nord','ost');
 			$wind_dir = str_replace($search,$replace,$wind_dir);
 		}
 		# Erstellen der Windtexte basierend auf der Windgeschwindigkeit
@@ -112,7 +112,7 @@ function w2s($text)
 					$WindAnsage="";
 					break;
 				case $windspeed >=$windschwelle:
-					$WindAnsage=". Es weht ".$WindText. " aus Richtung ". ($wind_dir). " mit Geschwindigkeiten bis zu ".$windspeed." km/h";
+					$WindAnsage=". Es weht ".$WindText. " aus Richtung ". utf8_decode($wind_dir). " mit Geschwindigkeiten bis zu ".$windspeed." km/h";
 					break;
 				default:
 					$WindAnsage="";
@@ -141,15 +141,15 @@ function w2s($text)
 		switch ($Stunden) {
 			# Wettervorhersage für die Zeit zwischen 06:00 und 11:00h
 			case $Stunden >=6 && $Stunden <8:
-				$text="Guten morgen liebe Familie. Ich möchte euch eine kurze Wettervorhersage für den heutigen Tag geben. Vormittags wird das Wetter ". $wetter. ", die Höchsttemperatur beträgt voraussichtlich ". round($high0)." Grad, die aktuelle Temperatur beträgt ". round($temp_c)." Grad. ". $RegenAnsage.". ".$WindAnsage.". Ich wünsche euch einen wundervollen Tag.";
+				$text="Guten morgen liebe Familie. Ich möchte euch eine kurze Wettervorhersage für den heutigen Tag geben. Vormittags wird das Wetter ". utf8_decode($wetter). ", die Höchsttemperatur beträgt voraussichtlich ". round($high0)." Grad, die aktuelle Temperatur beträgt ". round($temp_c)." Grad. ". $RegenAnsage.". ".$WindAnsage.". Ich wünsche euch einen wundervollen Tag.";
 				break;
 			# Wettervorhersage für die Zeit zwischen 11:00 und 17:00h
 			case $Stunden >=8 && $Stunden <17:
-				$text="Hallo zusammen. Heute Mittag, beziehungsweise heute Nachmittag, wird das Wetter ". $wetter_hc. ". Die momentane Außentemperatur beträgt ". round($temp_c)." Grad. " .$RegenAnsage.". ".$WindAnsage.". Ich wünsche euch noch einen schönen Nachmitag.";
+				$text="Hallo zusammen. Heute Mittag, beziehungsweise heute Nachmittag, wird das Wetter ". utf8_decode($wetter_hc). ". Die momentane Außentemperatur beträgt ". round($temp_c)." Grad. " .$RegenAnsage.". ".$WindAnsage.". Ich wünsche euch noch einen schönen Nachmitag.";
 				break;
 			# Wettervorhersage für die Zeit zwischen 17:00 und 22:00h
 			case $Stunden >=17 && $Stunden <22:
-				$text="Guten Abend. Hier noch mal eine kurze Aktualisierung. In den Abendstunden wird es ". $wetter. ". Die aktuelle Außentemperatur ist ". round($temp_c)." Grad, die zu erwartende Tiefsttemperatur heute abend beträgt ". round($low0). " Grad. ". $RegenAnsage.". ".$WindAnsage.". Einen schönen Abend noch.";
+				$text="Guten Abend. Hier noch mal eine kurze Aktualisierung. In den Abendstunden wird es ". utf8_decode($wetter). ". Die aktuelle Außentemperatur ist ". round($temp_c)." Grad, die zu erwartende Tiefsttemperatur heute abend beträgt ". round($low0). " Grad. ". $RegenAnsage.". ".$WindAnsage.". Einen schönen Abend noch.";
 				break;
 			# Wettervorhersage für den morgigen Tag nach 22:00h
 			case $Stunden >=22:
@@ -159,9 +159,8 @@ function w2s($text)
 				$text="";
 				break;
 		}
-		$wtext = $text;
-		if ($debug == 1) 
-		{
+		$text = utf8_encode($text);
+		if ($debug == 1) {
 			echo '<br />Gesamter Text zur Uebergabe an T2S:';
 			echo '<br />';
 			print_r ($text); 
@@ -192,9 +191,8 @@ function w2s($text)
 			print_r ($regenwahrscheinlichkeit0). ' %';
 			echo '<br />Regenwahrscheinlichkeit morgen:';
 			print_r ($regenwahrscheinlichkeit1). ' %';
-			# echo "Windansage: ".$conditions0. "; Windspeed: " .$windspeed. "; Windrichtung : ". $wind_dir;
 			echo '<br />';
-			#exit;
+			echo '<br />';
 		}
 		return $text;
 	}

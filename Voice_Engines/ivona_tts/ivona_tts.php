@@ -15,7 +15,7 @@ class IVONA_TTS
 	}
 	
 	protected function _getConfig() {
-		include './config.php';
+		include './System/config.php';
 		$this->_config = $config;
 	}
 	
@@ -97,6 +97,8 @@ class IVONA_TTS
             rewind($verbose);
             $verboseLog = stream_get_contents($verbose);
             #echo "Verbose information:\n<pre>", htmlspecialchars($verboseLog), "</pre>\n";
+		if ( substr(bin2hex($result), 0, 6) != "494433" )
+			throw new Exception("Response from Ivona is no mp3: ".$result);
         }
         return $result;
     }
