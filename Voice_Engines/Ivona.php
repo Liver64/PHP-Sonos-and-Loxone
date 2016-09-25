@@ -9,7 +9,7 @@ function t2s($messageid)
 	
 	global $messageid, $words, $filename, $fileolang, $voice, $accesskey, $secretkey, $fileo;
 		include 'ivona_tts.php';
-		include 'config.php';
+		include './System/config.php';
 		
 		#-- Übernahme der Variablen aus config.php --
 		$language = $config['messageLangI'];

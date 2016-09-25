@@ -565,6 +565,8 @@ Content-Length: 0
 $this->sendPacket($content);
 }
 
+
+
  /**
  * Adds a Member to a existing ZoneGroup
  * (a single player is also considered a existing group)
@@ -617,7 +619,7 @@ $returnContent = $this->XMLsendPacket($content);
       } else { $ZoneAttributes[$key] = ""; }
 
 
-      return $ZoneAttributes; //Assoziatives Array
+      return ($ZoneAttributes); //Assoziatives Array
       // set AVtransporturi ist notwendig
     }
 
@@ -764,7 +766,7 @@ $this->sendPacket($content);
     public function SaveQueue($title,$id="") // added br
     {
 
-        $header='POST /MediaRenderer/AVTransport/Control HTTP/1.1
+$header='POST /MediaRenderer/AVTransport/Control HTTP/1.1
 SOAPACTION: "urn:schemas-upnp-org:service:AVTransport:1#SaveQueue"
 CONTENT-TYPE: text/xml; charset="utf-8"
 HOST: '.$this->address.':1400';
@@ -1071,7 +1073,8 @@ Content-Length: 304
 
 <s:Envelope s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" xmlns:s="http://schemas.xmlsoap.org/soap/envelope/"><s:Body><u:SetGroupMute xmlns:u="urn:schemas-upnp-org:service:GroupRenderingControl:1"><InstanceID>0</InstanceID><DesiredMute>'.$mute.'</DesiredMute></u:SetGroupMute></s:Body></s:Envelope>'; 
 
-        $this->sendPacket($content); 
+
+        return (int)$this->sendPacket($content); // return (int) hinzugefügt
     } 
      
 	public function SetGroupVolume($volume) 
@@ -1134,6 +1137,7 @@ Content-Length: '.$length.'
 		$this->sendPacket($content); 
 	}
 
+	
 	public function BecomeCoordinatorOfStandaloneGroup()
 	{
 
@@ -1147,6 +1151,136 @@ Content-Length: 310
 
 		$this->sendPacket($content);
 	} 
+	
+	
+	public function DelSonosPlaylist($id)
+    {
+$content='POST /MediaServer/ContentDirectory/Control HTTP/1.1
+CONNECTION: close
+HOST: '.$this->address.':1400
+CONTENT-LENGTH: 250
+CONTENT-TYPE: text/xml; charset="utf-8"
+SOAPACTION: "urn:schemas-upnp-org:service:ContentDirectory:1#DestroyObject"
+
+<s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/" s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/">
+<s:Body><u:DestroyObject xmlns:u="urn:schemas-upnp-org:service:ContentDirectory:1"><ObjectID>'.$id.'</ObjectID></u:DestroyObject></s:Body></s:Envelope>';
+
+        $this->sendPacket($content);
+    }  
+	
+	
+
+	public function DelegateGroupCoordinationTo($RinconID, $Rejoin) {
+		
+	# 0 = RejoinGroup --> false 
+	# 1 = RejoinGroup --> true
+
+$content='POST /MediaRenderer/AVTransport/Control HTTP/1.1
+SOAPACTION: "urn:schemas-upnp-org:service:AVTransport:1#DelegateGroupCoordinationTo"
+CONTENT-TYPE: text/xml; charset="utf-8"
+HOST: '.$this->address.':1400
+Content-Length: 381
+
+<s:Envelope s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" xmlns:s="http://schemas.xmlsoap.org/soap/envelope/"><s:Body>
+<u:DelegateGroupCoordinationTo xmlns:u="urn:schemas-upnp-org:service:AVTransport:1"><InstanceID>0</InstanceID>
+<NewCoordinator>'.$RinconID.'</NewCoordinator><RejoinGroup>'.$Rejoin.'</RejoinGroup></u:DelegateGroupCoordinationTo></s:Body></s:Envelope>';
+
+		$this->sendPacket($content);
+}
+
+
+public function GetZoneGroupState() 
+{
+	return $this->processSoapCall("/ZoneGroupTopology/Control",
+                                  "urn:schemas-upnp-org:service:ZoneGroupTopology:1",
+                                  "GetZoneGroupState",
+                                  array() );
+}    
+	
+public function GetZoneGroupAttributes()
+  {
+    return $this->processSoapCall("/ZoneGroupTopology/Control",
+                                  "urn:schemas-upnp-org:service:ZoneGroupTopology:1",
+                                  "GetZoneGroupAttributes",
+                                  array() );                              
+  }
+  
+ public function processSoapCall($path,$uri,$action,$parameter)
+  {
+    try{
+      $client     = new SoapClient(null, array("location"   => "http://".$this->address.":1400".$path,
+                                               "uri"        => $uri,
+                                               "trace"      => true ));
+
+      return $client->__soapCall($action,$parameter);
+    }catch(Exception $e){
+      $faultstring = $e->faultstring;
+      $faultcode   = $e->faultcode;
+      if(isset($e->detail->UPnPError->errorCode)){
+        $errorCode   = $e->detail->UPnPError->errorCode;
+        throw new Exception("Error during Soap Call: ".$faultstring." ".$faultcode." ".$errorCode." (".$this->resoveErrorCode($path,$errorCode).")");
+      }else{
+        throw new Exception("Error during Soap Call: ".$faultstring." ".$faultcode);
+      }
+    }
+  }
+
+  public function resoveErrorCode($path,$errorCode)
+  {
+   $errorList = array( "/MediaRenderer/AVTransport/Control"      => array(
+                                                                           "701" => "ERROR_AV_UPNP_AVT_INVALID_TRANSITION",
+                                                                           "702" => "ERROR_AV_UPNP_AVT_NO_CONTENTS",
+                                                                           "703" => "ERROR_AV_UPNP_AVT_READ_ERROR",
+                                                                           "704" => "ERROR_AV_UPNP_AVT_UNSUPPORTED_PLAY_FORMAT",
+                                                                           "705" => "ERROR_AV_UPNP_AVT_TRANSPORT_LOCKED",
+                                                                           "706" => "ERROR_AV_UPNP_AVT_WRITE_ERROR",
+                                                                           "707" => "ERROR_AV_UPNP_AVT_PROTECTED_MEDIA",
+                                                                           "708" => "ERROR_AV_UPNP_AVT_UNSUPPORTED_REC_FORMAT",
+                                                                           "709" => "ERROR_AV_UPNP_AVT_FULL_MEDIA",
+                                                                           "710" => "ERROR_AV_UPNP_AVT_UNSUPPORTED_SEEK_MODE",
+                                                                           "711" => "ERROR_AV_UPNP_AVT_ILLEGAL_SEEK_TARGET",
+                                                                           "712" => "ERROR_AV_UPNP_AVT_UNSUPPORTED_PLAY_MODE",
+                                                                           "713" => "ERROR_AV_UPNP_AVT_UNSUPPORTED_REC_QUALITY",
+                                                                           "714" => "ERROR_AV_UPNP_AVT_ILLEGAL_MIME",
+                                                                           "715" => "ERROR_AV_UPNP_AVT_CONTENT_BUSY",
+                                                                           "716" => "ERROR_AV_UPNP_AVT_RESOURCE_NOT_FOUND",
+                                                                           "717" => "ERROR_AV_UPNP_AVT_UNSUPPORTED_PLAY_SPEED",
+                                                                           "718" => "ERROR_AV_UPNP_AVT_INVALID_INSTANCE_ID"
+                                                                         ),
+                       "/MediaRenderer/RenderingControl/Control" => array(
+                                                                           "701" => "ERROR_AV_UPNP_RC_INVALID_PRESET_NAME",
+                                                                           "702" => "ERROR_AV_UPNP_RC_INVALID_INSTANCE_ID"
+                                                                         ),
+                       "/MediaServer/ContentDirectory/Control"   => array(
+                                                                           "701" => "ERROR_AV_UPNP_CD_NO_SUCH_OBJECT",
+                                                                           "702" => "ERROR_AV_UPNP_CD_INVALID_CURRENTTAGVALUE",
+                                                                           "703" => "ERROR_AV_UPNP_CD_INVALID_NEWTAGVALUE",
+                                                                           "704" => "ERROR_AV_UPNP_CD_REQUIRED_TAG_DELETE",
+                                                                           "705" => "ERROR_AV_UPNP_CD_READONLY_TAG_UPDATE",
+                                                                           "706" => "ERROR_AV_UPNP_CD_PARAMETER_NUM_MISMATCH",
+                                                                           "708" => "ERROR_AV_UPNP_CD_BAD_SEARCH_CRITERIA",
+                                                                           "709" => "ERROR_AV_UPNP_CD_BAD_SORT_CRITERIA",
+                                                                           "710" => "ERROR_AV_UPNP_CD_NO_SUCH_CONTAINER",
+                                                                           "711" => "ERROR_AV_UPNP_CD_RESTRICTED_OBJECT",
+                                                                           "712" => "ERROR_AV_UPNP_CD_BAD_METADATA",
+                                                                           "713" => "ERROR_AV_UPNP_CD_RESTRICTED_PARENT_OBJECT",
+                                                                           "714" => "ERROR_AV_UPNP_CD_NO_SUCH_SOURCE_RESOURCE",
+                                                                           "715" => "ERROR_AV_UPNP_CD_SOURCE_RESOURCE_ACCESS_DENIED",
+                                                                           "716" => "ERROR_AV_UPNP_CD_TRANSFER_BUSY",
+                                                                           "717" => "ERROR_AV_UPNP_CD_NO_SUCH_FILE_TRANSFER",
+                                                                           "718" => "ERROR_AV_UPNP_CD_NO_SUCH_DESTINATION_RESOURCE",
+                                                                           "719" => "ERROR_AV_UPNP_CD_DESTINATION_RESOURCE_ACCESS_DENIED",
+                                                                           "720" => "ERROR_AV_UPNP_CD_REQUEST_FAILED"
+                                                                         ) ); 
+
+    if (isset($errorList[$path][$errorCode])){
+      return $errorList[$path][$errorCode] ;
+    }else{
+      return "UNKNOWN";
+    }
+  }
+
+
 	
 
 	public function SetTreble($Treble)
@@ -1986,8 +2120,7 @@ CONTENT-TYPE: text/xml; charset="utf-8"
 SOAPACTION: "urn:schemas-upnp-org:service:AVTransport:1#Seek"
 
 <s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/" s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"><s:Body><u:Seek xmlns:u="urn:schemas-upnp-org:service:AVTransport:1"><InstanceID>0</InstanceID><Unit>TRACK_NR</Unit><Target>'.$track.'</Target></u:Seek></s:Body></s:Envelope>';
-
-      $this->sendPacket($content);
+	    $this->sendPacket($content);
    }
    
 
@@ -2062,6 +2195,8 @@ Content-Length: '. strlen($xml) .'
         }
 return $liste;
 }
+
+
 
 /**
  * Returns an array with all sonos playlists
@@ -2536,5 +2671,16 @@ return $list;
          
         return $result; 
     }  
-	}
+}
+
+
+	
+	
+function SonosBY_SendSOAP($IPaddress, $content) { 
+    $fp = fsockopen($IPaddress, 1400); 
+   fputs ($fp, $content); 
+   $result = stream_get_contents($fp, -1); 
+   fclose($fp); 
+   return $result; 
+} 
 ?>

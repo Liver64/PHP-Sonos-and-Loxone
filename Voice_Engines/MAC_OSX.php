@@ -3,7 +3,7 @@ function t2s($messageid)
 // text-to-speech: Erstellt mit dem OS X Command "say" eine AIFF Datei und speichert diese in einem Verzeichnis 
 // @Parameter = $messageid von sonos2.php
 {
-	#echo "bin in der t2sx.php angekommen\n";
+	#echo "bin in der MAC_OSX.php angekommen\n";
 	global $words, $config, $messageid, $fileolang, $fileo;
 
 		$ttskey = $config['VoiceRSS_key'];
