@@ -141,7 +141,7 @@ function w2s($text)
 		switch ($Stunden) {
 			# Wettervorhersage für die Zeit zwischen 06:00 und 11:00h
 			case $Stunden >=6 && $Stunden <8:
-				$text="Guten morgen liebe Familie. Ich möchte euch eine kurze Wettervorhersage für den heutigen Tag geben. Vormittags wird das Wetter ". utf8_decode($wetter). ", die Höchsttemperatur beträgt voraussichtlich ". round($high0)." Grad, die aktuelle Temperatur beträgt ". round($temp_c)." Grad. ". $RegenAnsage.". ".$WindAnsage.". Ich wünsche euch einen wundervollen Tag.";
+				$text="Guten morgen liebe Familie. Ich möchte euch eine kurze Wettervorhersage für den heutigen Taach geben. Vormittags wird das Wetter ". utf8_decode($wetter). ", die Höchsttemperatur beträgt voraussichtlich ". round($high0)." Grad, die aktuelle Temperatur beträgt ". round($temp_c)." Grad. ". $RegenAnsage.". ".$WindAnsage.". Ich wünsche euch einen wundervollen Taach.";
 				break;
 			# Wettervorhersage für die Zeit zwischen 11:00 und 17:00h
 			case $Stunden >=8 && $Stunden <17:

@@ -2,8 +2,8 @@
 
 ##############################################################################################################################
 #
-# Version: 		1.2.1
-# Datum: 		25.09.2016
+# Version: 		1.2.2
+# Datum: 		10.10.2016
 # veröffentlicht in forum: https://www.loxforum.com/
 # 
 # Historie:
@@ -16,7 +16,8 @@
 # 1.1.5		Neuer Parameter für die Wartezeit in Sekunden bei sendgroupmessage bevor der Gruppenmute vor T2S aufgehoben wird.
 #			Default Lautstärke Parameter für T2S und Sonos je Zone hinzugefügt (siehe sonoszone)
 # 1.2.0		Neuer Paramter 'MP3path' als Speicherort für MP3 files die über 'messageid' abgerufen werden
-# 1.2.1		Parameter mit Aufbewahrungszeitraum der vom T2S Provider gespeicherten MP3 Dateien zur automatischen Löschung (Zeile 112)	 
+# 1.2.1		Parameter mit Aufbewahrungszeitraum der vom T2S Provider gespeicherten MP3 Dateien zur automatischen Löschung (Zeile 112) 
+# 1.2.2		Parameter für T2S Engines zusammengefasst und optimiert
 #
 #
 # bekannte Probleme: derzeit keine
@@ -25,10 +26,10 @@
 $config = array(
 	# Hier werden die einzelnen Sonos Zonen gepflegt (ACHTUNG: kleingeschreibung)
 	# die Aufschlüsselung ist wie folgt: 'Zone' => array('IP Adresse','Standardvolume für T2S Ansagen','Standardvolume für Sonos')
-	'sonoszone' => array(
-				'bad'      	=> array('192.168.50.24','25','30'),
-				'master'   	=> array('192.168.50.57','35','20'), 
-				'schlafen' 	=> array('192.168.50.38','18','12')
+	'sonoszonen' => array(
+				'bad'      	=> array('192.168.50.24','30','30'),
+				'master'   	=> array('192.168.50.57','25','20'), // Küche
+				'buero'   	=> array('192.168.50.31','35','25')
 				),
 
 	# Hier können eigene Radio Sender definiert werden, welche bei 'nextradio' oder 'prevradio' angesteuert werden
@@ -50,32 +51,31 @@ $config = array(
 				"x-rincon-mp3radio://relay3.181.fm:14042",
 				"x-rincon-mp3radio://1live-diggi.akacast.akamaistream.net/7/965/119435/v1/gnl.akacast.akamaistream.net/1live-diggi"
 				),
-	####################################################################################################
-	# Text-to-Speech Parameter für VoiceRSS.org 
-	#---------------------------------------------------------------------------------------------------
-	# Hier deinen VoiceRSS.org API key einpflegen
-	'VoiceRSS_key'  => 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
-
-	# Die Sprache für die VoiceRSS Engine festlegen
-    'messageLangV'   => 'de-de',
-
-	# Den Qualität der MP3 Datei festlegen die VoiceRSS.org zurückschickt (die vorgegebene funktioniert)
-	'audiocodec'    => '48khz_16bit_stereo',
-	####################################################################################################
 	
 	####################################################################################################
-	# Text-to-Speech Parameter für IVONA.com 
+	# Angabe welche TTS Engine benutzt werden soll:
+	#----------------------------------------------
+	#-- für VoiceRSS.org die '1001'
+	#-- für IVONA.com die '2001'
+	#-- für die OS X TTS-Engine die '3001'
+	#   eingeben.
+	't2s_engine'	=> 2001,
+	####################################################################################################			
+	
+	####################################################################################################
+	# Text-to-Speech Parameter (Ivona oder VoiceRSS)
 	#---------------------------------------------------------------------------------------------------
-	# Hier deinen IVONA Access key einpflegen
-	'access_key'  => 'xxxxxxxxxxxxxxxxxxxx',
-	# Hier deinen IVONA Secret key einpflegen
-	'secret_key'  => 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
-
-	# Die Sprache für die IVONA Engine festlegen
-    'messageLangI'   => 'de-DE',
-
-	# Standardstimme für T2s
+	#'API-key'  => '1075cabdb6954691bd60825cf3800858', 		// VoiceRSS
+	'API-key' => 'xxx', 					// Ivona
+	# Secret Key eingeben (nur Ivona)
+	'secret-key'  => 'xxxx',
+	# Sprache für die Ausgabe (in kleinbuchstaben)
+    'messageLang'    => 'de',
+	# Standardstimme für T2s (nur Ivona)
 	'voice'    => 'Hans', // 'Marlene' oder 'Hans'
+	# Qualitätsstufe der MP3 Datei festlegen (nur VoiceRSS)
+	'audiocodec'    => '48khz_16bit_stereo', # <-- default der funktioniert
+	####################################################################################################
 	
 	####################################################################################################
 	# Text-to-Speech Parameter für Mac OS X
@@ -84,19 +84,10 @@ $config = array(
 	'lamePath'	=>	'/usr/local/bin/',
 	####################################################################################################
 	
-	####################################################################################################
-	# Angabe welche TTS Engine benutzt werden soll:
-	#-- für VoiceRSS.org die '1001'
-	#-- für IVONA.com die '2001'
-	#-- für die OS X TTS-Engine die '3001'
-	# eingeben.
-	't2s_engine'	=> 2001,
-	####################################################################################################
-
 	# Pfad zu deinem Speichermedium in deinem NETZWERK von dem Sonos die Nachrichen abruft und abspielt
-	# WICHTIG!!! Die jeweiligen Pfadangaben müsse nmit einem / beendet werden!!!!!
+	# beide Pfade MÜSSEN mir einem / enden
     'messagespath'	=> '//syn-ds415/music/tts/',	# Windows Backslash \\ und Slash \ in Pfadangaben durch // und / 
-		
+			
 	# Pfad zu dem Speichermedium deines Webservers auf dem die erhaltenen MP3 Files gespeichert werden sollen
     'messageStorePath'   => '//volume1/music/tts/', 
 		
@@ -106,9 +97,9 @@ $config = array(
 													# als Unterverzeichnis des 'messagepath' erstellen und dann hier angeben!!!
 	
 	# Angabe in Tagen oder Wochen ab welchen Datum die MP3 aus dem Verzeichnis 'messageStorePath' automatisch gelöscht werden sollen.
-	# Bsp.: '-4 days' --> löscht alle MP3 Dateien mit Dateinamenlänge 36 die älter als 4 Tage sind.
-	'MP3store'      => '-4 days',					# für 1 Tag: -1 days, bei Wochen: -2 weeks
-
+	# Bsp.: '-4 days' --> löscht alle MP3 Dateien mit Dateinamenlänge 36 die älter als 4 Tage von heute an gespeichert wurden.
+	'MP3store'      => '-5 days',					# bei Wochen: -2 weeks
+	
 	# WICHIG, NICHT ÄNDERN: Datei Name der PHPSonos
     'filePhpSonos'  => 'PHPSonos.php',
 
@@ -124,20 +115,15 @@ $config = array(
 	
 	## NEU
 	# Wartezeit in Sekunden bei sendgroupmessage bevor der Gruppenmute aufgehoben wird.
-	'sleepgroupmessage' => '3',
+	'sleepgroupmessage' => '2',
 
 	# Dateiname der Jingle oder Gong mp3 Datei die vor der eigentlichen Nachricht/Durchsage abgespielt wird
 	'file_gong'     => '2_Airport_gong',
 
-	#########################################################
-	#    ++ Neue Parameter aufgrund neuer Funktionen ++     #
-	#########################################################
-	# ab hier in eure config.php kopieren
-
 	# Hier die Daten und User des Loxone Miniserver eintragen
-	'LoxIP' 	=> '192.168.xx.xxx:80',
-	'LoxUser' 	=> 'xxxxxxxxxxx',
-	'LoxPassword'	=> 'xxxxxxxxxxxxxx',
+	'LoxIP' 	=> 'xx',
+	'LoxUser' 	=> 'xxx',
+	'LoxPassword'	=> 'xxxx',
 	
 	# Sollen Daten zur Loxone geschickt werden (Titel/Interpret, Lautstärke, Mute Status, Play Status sind möglich)
 	'LoxDaten' => true,
@@ -154,31 +140,24 @@ $config = array(
 	'rampto' => 'alarm',
 	# Lautstärke in Prozent ab wann 'rampto' OHNE explizite Angabe genutzt werden soll, ansonsen geht es mit eingestellter Lautstärke weiter
 	# gilt für folgende Funktionen: play, nextradio, previousradio, playqueue, sonosplaylist, radioplaylist
-	'volrampto' => '35',
+	'volrampto' => '25',
 
-	# Parameter für Fritzbox Integration --> Noch nicht aktiv
-	######################################################################
-
-	'fritzboxip'  	=> '192.168.xx.x',
-	'fritzboxpw'  	=> 'xxxxxxxxx',
-	'rufumleitung1' => '017664067xxx',
-	'rufumleitung2'	=> '017664067xxx',
-	'rufumleitung3'	=> '016387581yyy',
-	######################################################################
+	
 
 	# Parameter für Wunderground w2s Integration
 	######################################################################
 	# Token bei http://deutsch.wunderground.com/weather/api/ anfordern
 	# Gültigen Wunderground API key einfügen
-	'wgkey'		=> 'xxxxxxxxxxxxxxxx',
+	'wgkey'		=> 'xxxxxx',
 	# Lässt sich mittels Funktion geolookup und Längen-/Breitengrad ermitteln. Siehe auch Dokumentation der API
-	'wgcity' 		=> 'DEINE STADT',
+	'wgcity' 		=> 'Darmstadt',
 	# Wird der Schwellwert überschritten erfolgt die Sprachausgabe für Wind km/h oder Regen (% Regenwahrscheinlichkeit)
 	'wgwindschwelle'	=> '20', // km/h
 	'wgregenschwelle'	=> '25', // in Prozent
 	######################################################################	
 
-	# Zum debuggen mit Hilfe des Browsers kann im folgenden Parameter eine '1' gesetzt werden
-	# Bitte unbedingt daran denken vor Produktivnutzung wieder auf '0' zu setzen
+	# Debuggen im Browser = '1' <-- Empfehlung zum Entwickeln
+	# Einfaches Error Handling = '0' <-- Empfehlung für Nutzung in Produktivumgebung
+	# Erweitertes Error Handling = '2'
 	'debuggen'	=> '0'
 );

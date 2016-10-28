@@ -7,10 +7,14 @@ function t2s($messageid)
 {
 	global $words, $config, $messageid, $fileolang, $fileo;
 
-		$ttskey = $config['VoiceRSS_key'];
-		$ttslanguage = $config['messageLangV'];
+		$ttsengine = $config['t2s_engine'];
+		$ttskey = $config['API-key'];
 		$ttsaudiocodec = $config['audiocodec'];
 		$words = utf8_encode($words);
+		
+		if($ttsengine = '1001') {
+			$ttslanguage = $config['messageLang'].'-'.$config['messageLang'];
+		}
 						
 		#####################################################################################################################
 		# zu testen da auf Google Translate basierend (urlencode)
