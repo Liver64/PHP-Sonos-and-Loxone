@@ -20,8 +20,8 @@ class IVONA_TTS
 	}
 	
 	function _main() {
-		$akey = $this->_config['access_key'];
-		$skey = $this->_config['secret_key'];
+		$akey = $this->_config['API-key'];
+		$skey = $this->_config['secret-key'];
 	}
 	
 	static $utc_tz;
@@ -51,7 +51,7 @@ class IVONA_TTS
         $shortdate  = $datestamp->format( "Ymd" );
         // establish the signing key
         {
-            $ksecret    = 'AWS4'.$this->_config['secret_key'];
+            $ksecret    = 'AWS4'.$this->_config['secret-key'];
             $kdate      = hash_hmac( 'sha256', $shortdate, $ksecret, true );
             $kregion    = hash_hmac( 'sha256', 'eu-west-1', $kdate, true );
             $kservice   = hash_hmac( 'sha256', 'tts', $kregion, true );
@@ -68,7 +68,7 @@ class IVONA_TTS
         $signed_request     = hash( 'sha256', $canonical_request );
         $sign_string        = "AWS4-HMAC-SHA256\n{$longdate}\n$shortdate/eu-west-1/tts/aws4_request\n" . $signed_request;
         $signature          = hash_hmac( 'sha256', $sign_string, $ksigning );
-        $params['Authorization'] = "AWS4-HMAC-SHA256 Credential=" .$this->_config['access_key']. "/$shortdate/eu-west-1/tts/aws4_request, " .
+        $params['Authorization'] = "AWS4-HMAC-SHA256 Credential=" .$this->_config['API-key']. "/$shortdate/eu-west-1/tts/aws4_request, " .
                                    "SignedHeaders=content-type;host;x-amz-content-sha256;x-amz-date, " .
                                    "Signature=$signature";
           $params['content-length'] = strlen( $payload ) ;

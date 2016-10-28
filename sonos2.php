@@ -2,8 +2,8 @@
 
 ##############################################################################################################################
 #
-# Version: 	2.0.5
-# Datum: 	25.09.2016
+# Version: 	2.0.6
+# Datum: 	10.10.2016
 # veröffentlicht in forum: https://www.loxforum.com/
 # 
 # Historie:
@@ -95,12 +95,18 @@
 #			- Korrektur Playmode Shuffle wiederherstellen bei Gruppendurchsagen (nicht 100%ig behoben --> andere Song)
 #			- Korrektur Wiederherstellung Radiosender bei Einzeldurchsage
 #			- Erweiterung des Error Managements mit individuellen Messages
+# 2.0.6		Bugfix bzgl. Online Status der Zonen hinzugefügt --> nur Zonen die im Netzwerk Online werden genutzt, egal ob Sie in der Syntax
+#			angegeben sind oder nicht.
+#			Bugfix bei T2S Durchsage behoben (Playlist im Shuffle Modus noch in der Queue und Radio läuft) 
+#			- diverse kleinere Bugfix gelöst (sonos-to-speech, T2S Volume bei Gruppendurchsagezone für Master)
+#
 #			
 # bekannte Probleme:	bei T2S an eine 3-er Gruppe wobei zone=<ZONE> Master ist und bei der T2S zusätzlich ein Member der gleichen
 #						Gruppe benötigt ist, kann es sein dann die verbliebene Zone nicht mehr miteingebunden wird.
 # 						
 # geplante Funktionen: 	- Integration in Loxberry Projekt
-#						- Bugfix T2S an 3er Gruppe (siehe bekannte Probleme)
+#						- Bugfix Gruppen T2S an 3er Gruppe (siehe bekannte Probleme)
+#						- Bugfix Gruppen T2S an 2er Gruppe wenn Master und Member bereits in einer Gruppe sind (kein Rückbau der Original Zustände)
 #						- Korrektur Titel / Interpret Info an Loxone wenn Zone sich in einer Gruppe befindet (derzeit keine Anzeige)
 #						- Bugfix shuffle nach T2S
 #						- Einbinden des Line-in Einganges
@@ -120,10 +126,7 @@ if($debug == 1) {
 	# include ("mp3info.php"); 
 	}
 	
-if($debug != 1) { 
-	set_error_handler("customError");
-}
-	
+
  // Prüfen ob das Verzeichnis 'log' vorhanden ist, falls nicht wird es mit Rechte 0777 erstellen
  $path = "log";
  if (is_dir($path)) { 
@@ -132,12 +135,26 @@ if($debug != 1) {
  } 
  
  // Übernahme und Deklaration von Variablen aus config.php
-$sonoszone = $config['sonoszone'];
+$sonoszonen = $config['sonoszonen'];
 $loxip = $config['LoxIP'];
 $loxuser = $config['LoxUser'];
 $loxpassword = $config['LoxPassword'];
 $log = $config['logging'];
 
+// prüft den Onlinestatus jeder Zone
+foreach($sonoszonen as $zonen => $ip) {
+	echo "<pre>"; 
+	if (!$socket = @fsockopen($ip[0], 1400, $errno, $errstr, 1)) {
+		echo '<br>';
+	} else {
+		$sonoszone[$zonen] = $ip;
+	}
+}
+
+// Setzen der Error Handler
+if($debug == 0) {set_error_handler("errorHandler"); }
+if($debug == 1) {echo '<br>'; }
+if($debug == 2) {set_error_handler("customError"); }
 
 // prüft ob Zeitzonen Server/PHP identisch sind und korrigert diese ggf.
 $script_tz = date_default_timezone_get();
@@ -147,8 +164,59 @@ if (strcmp($script_tz, ini_get('date.timezone'))){
 	trigger_error('Die Script-Zeitzone unterschied sich von der ini-set Zeitzone und wurde angepasst.', E_USER_NOTICE);
 }
 
+// Error handling einfach (erstellt Eintrag in Error log)	
+function errorHandler($errno, $errstr, $errfile, $errline) {
+	global $path, $loxuser, $loxpassword, $loxip, $master;
+	
+	ini_set("display_errors", 0);
+	switch ($errno) {
+        case E_NOTICE:
+        case E_USER_NOTICE:
+			$message = date("Y-m-d H:i:s - ");
+			$message .= "USER defined WARNING error: [" . $errno ."], " . "$errstr in $errfile in line $errline, \r\n";
+			error_log($message, 3, $path."/sonos_error.log");
+			echo("Ein Fehler trat auf. Bitte Datei /".$path."/sonos_error.log pruefen.");
+			break;
+			
+        case E_DEPRECATED:
+        case E_USER_DEPRECATED:
+        case E_STRICT:
+			$message = date("Y-m-d H:i:s - ");
+			$message .= "STRICT error: [" . $errno ."], " . "$errstr in $errfile in line $errline, \r\n";
+			error_log($message, 3, $path."/sonos_error.log");
+			echo("Ein Fehler trat auf. Bitte Datei /".$path."/sonos_error.log pruefen.");
+            break;
+ 
+        case E_WARNING:
+        case E_USER_WARNING:
+			$message = date("Y-m-d H:i:s - ");
+			$message .= "USER WARNING error: [" . $errno ."], " . "$errstr in $errfile in line $errline, \r\n";
+			error_log($message, 3, $path."/sonos_error.log");
+			echo("Ein Fehler trat auf. Bitte Datei /".$path."/sonos_error.log pruefen.");
+            break;
+ 
+        case E_ERROR:
+        case E_USER_ERROR:
+        case E_RECOVERABLE_ERROR:
+			$message = date("Y-m-d H:i:s - ");
+			$message .= "FATAL error: [" . $errno ."], " . "$errstr in $errfile in line $errline, \r\n";
+			error_log($message, 3, $path."/sonos_error.log");
+			echo("Ein Fehler trat auf. Bitte Datei /".$path."/sonos_error.log pruefen.");
+ 
+        default:
+			#$message = date("Y-m-d H:i:s - ");
+			#$message .= "Unknown error at $errfile in line $errline, \r\n";
+			#error_log($message, 3, $path."/sonos_error.log");
+			#echo("Ein unbekannter Fehler trat auf. Bitte Datei /".$path."/sonos_error.log pruefen.");
+    }
+	#-- Loxone Uebermittlung eines Fehlerhinweises ----------------------------------------------
+	$ErrorS = rawurlencode("Sonos Fehler. Bitte log pruefen");
+	$handle = @fopen("http://$loxuser:$loxpassword@$loxip/dev/sps/io/S-Error/$ErrorS", "r");
+	#--------------------------------------------------------------------------------------------
+}
 
-// Error handling (erstellt error log datei)	
+
+// // Error handling erweitert (erstellt Eintrag in Error log)
  function customError($errno, $errstr, $errfile, $errline, $errcontext){
  	global $path, $loxuser, $loxpassword, $loxip, $master;
 	$message = date("Y-m-d H:i:s - ");
@@ -159,18 +227,18 @@ if (strcmp($script_tz, ini_get('date.timezone'))){
 	$ErrorS = rawurlencode("Sonos Fehler. Bitte log pruefen");
 	$handle = @fopen("http://$loxuser:$loxpassword@$loxip/dev/sps/io/S-Error/$ErrorS", "r");
 	#--------------------------------------------------------------------------------------------
-	die("Ein Fehler trat auf. Bitte Datei /".$path."/sonos_error.log pruefen.");
+	echo("Ein Fehler trat auf. Bitte Datei /".$path."/sonos_error.log pruefen.");
 	}
 #------------------------------------------------------------------------------------------------
  
  
-# Start des Srcipts
+# Start des eigentlichen Srcipts
 if(isset($_GET['volume']) && is_numeric($_GET['volume']) && $_GET['volume'] >= 0 && $_GET['volume'] <= 100) {
 	$volume = $_GET['volume'];
 } else {
 	$master = $_GET['zone'];
 	$sonos = new PHPSonos($sonoszone[$master][0]); //Sonos IP Adresse
-	$volume = $config['sonoszone'][$master][2];
+	$volume = $config['sonoszonen'][$master][2];
 }
 
 if(isset($_GET['rampto'])) {
@@ -202,8 +270,7 @@ if(isset($_GET['rampto'])) {
 if(array_key_exists($_GET['zone'], $sonoszone)){ 
 	$master = $_GET['zone'];
 	$sonos = new PHPSonos($sonoszone[$master][0]); //Sonos IP Adresse
-	#$sonosclass = new SonosUpnpDevice($sonoszone[$master][0]); //Sonos IP Adresse
-	
+		
 	switch($_GET['action'])	{
 		case 'play';
 			$posinfo = $sonos->GetPositionInfo();
@@ -215,7 +282,7 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 					$sonos->Play();
 				}
 			} else {
-				trigger_error("Keine Titel in der Playliste zum Abspielen.", E_USER_WARNING);
+				trigger_error("Keine Titel in der Playliste zum Abspielen.", E_USER_NOTICE);
 			}
 			break;
 		
@@ -241,11 +308,17 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 				$sonos->Previous();
 			break;  
 			
-		case 'zonestatus';
+		case 'getzonesonline';
+				getzonesonline();
+		break;  
+		
+		
+		case 'networkstatus';
 				networkstatus();
-			break;  
+		break;  
 			
-		case 'rewind':
+
+			case 'rewind':
 				$sonos->Rewind();
 			break; 
 
@@ -258,7 +331,7 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 				$sonos->SetMute(true);
 				logging();
 			} else {
-				trigger_error('Falscher Mute Parameter', E_USER_WARNING);
+				trigger_error('Falscher Mute Parameter', E_USER_NOTICE);
 			}       
 			break;
 		
@@ -359,7 +432,7 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 				$sonos->SetVolume($volume);
 				loxdata();
 			} else {
-				trigger_error('falscher Wertebereich für die Lautstärke, 0-100 ist nur erlaubt', E_USER_WARNING);
+				trigger_error('falscher Wertebereich für die Lautstärke, 0-100 ist nur erlaubt', E_USER_NOTICE);
 			}
 			break;  
 		  
@@ -413,6 +486,7 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 		case 'addmember':
 		global $sonoszone, $sonos;
 			$member = $_GET['member'];
+			$member = getmemberonline($member);
 			$masterrincon = getRINCON($sonoszone[$master][0]); 
 			$sonos = new PHPSonos($sonoszone[$member][0]); 
 			$sonos->SetAVTransportURI("x-rincon:" . $masterrincon); 
@@ -422,6 +496,7 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 		case 'removemember':
 		global $sonoszone, $sonos;
 			$member = $_GET['member'];
+			$member = getmemberonline($member);
 			$sonos = new PHPSonos($sonoszone[$member][0]);
 			$sonos->BecomeCoordinatorOfStandaloneGroup();
 		break;
@@ -643,11 +718,11 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 						</tr>
 						<tr>
 						<td>
-						<a href="'.$_SERVER['SCRIPT_NAME'].'?zonen='.$master.'&action=previous" target="_blank">Zurück</a>
-						<a href="'.$_SERVER['SCRIPT_NAME'].'?zonen='.$master.'&action=play" target="_blank">Abspielen</a>
-						<a href="'.$_SERVER['SCRIPT_NAME'].'?zonen='.$master.'&action=pause" target="_blank">Pause</a>
-						<a href="'.$_SERVER['SCRIPT_NAME'].'?zonen='.$master.'&action=stop" target="_blank">Stop</a>
-						<a href="'.$_SERVER['SCRIPT_NAME'].'?zonen='.$master.'&action=next" target="_blank">Nächster</a>
+						<a href="'.$_SERVER['SCRIPT_NAME'].'?zone='.$master.'&action=previous" target="_blank">Zurück</a>
+						<a href="'.$_SERVER['SCRIPT_NAME'].'?zone='.$master.'&action=play" target="_blank">Abspielen</a>
+						<a href="'.$_SERVER['SCRIPT_NAME'].'?zone='.$master.'&action=pause" target="_blank">Pause</a>
+						<a href="'.$_SERVER['SCRIPT_NAME'].'?zone='.$master.'&action=stop" target="_blank">Stop</a>
+						<a href="'.$_SERVER['SCRIPT_NAME'].'?zone='.$master.'&action=next" target="_blank">Nächster</a>
 					</table>
 				';
 			break;
@@ -666,24 +741,32 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 				trigger_error("Der angegebene Wert für groupvolume ist nicht gültig. Erlaubte Werte sind 0 bis 100, bitte prüfen!", E_USER_ERROR);
 				exit;
 			}
+			if(isset($_GET['sonos'])) {
+				trigger_error("Der Parameter sonos kann nicht für Gruppendurchsagen verwendet werden!", E_USER_NOTICE);
+				exit;
+			}
+			checkTTSkeys();
 			$groupvol = "1";
 			$master = $_GET['zone'];
 			$member = $_GET['member'];
 			$member = explode(',', $member);
+			$member = getmemberonline($member);
 			// speichern der Zonen Zustände und Erstellen der Gruppe
 			save_current_gr($groupvol);
 			#sleep($config['sleepgroupmessage']); // warten gemäß config.php bis Gruppierung abgeschlossen ist
-			// Alle Zonen auf Mute und Playmode NORMAL
 			$sonos = new PHPSonos($sonoszone[$master][0]);
 			$sonos->SetGroupMute(true);
 			$sonos->SetPlayMode('NORMAL'); 
 			create_tts($text, $messageid);
 			sleep($config['sleepgroupmessage']); // warten gemäß config.php
-			// Setzen der T2S Lautstärke je Zone
+			// Setzen der T2S Lautstärke je Member Zone
 			foreach ($member as $player => $zone) {
 				$sonos = new PHPSonos($sonoszone[$zone][0]); 
-				$newvolume = $sonos->SetVolume($config['sonoszone'][$zone][1]);
+				$newvolume = $sonos->SetVolume($config['sonoszonen'][$zone][1]);
 			}
+			// Setzen der T2S Lautstärke für Master Zone
+			$sonos = new PHPSonos($sonoszone[$master][0]); 
+			$newmastervolume = $sonos->SetVolume($config['sonoszonen'][$master][1]);
 			// erhöht oder verringert die Defaultwerte aus der config.php um xx Prozent
 			if(isset($_GET['groupvolume']) && is_numeric($_GET['groupvolume']) && $_GET['groupvolume'] >= 0 && $_GET['groupvolume'] <= 100) {
 				$groupvolume = $_GET['groupvolume'];
@@ -706,13 +789,17 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 				$volume = $_GET['volume'];
 			} else 	{
 				// übernimmt Standard Lautstärke der angegebenen Zone aus config.php
-				$volume = $config['sonoszone'][$master][1];
+				$volume = $config['sonoszonen'][$master][1];
 			}
+			checkTTSkeys();
 			$groupvol = "0";
 			// prüft ob Zone in einer Gruppe ist
 			$checkgroup = sonosgroupzone();
-		
 			if($checkgroup == true) {
+				if(isset($_GET['sonos'])) {
+					trigger_error("Die angegebene Zone befindet sich in einer Gruppe! Es stehen keine Informationen zur Verfügung.", E_USER_NOTICE);
+				exit;
+				}
 				save_current_group_ez();
 			} else {
 				save_current_ez();
@@ -759,7 +846,7 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 			
 			# prüft ob die Verbindung zu Loxone in der config eingeschaltet ist			
 			if($config['LoxDaten'] === false) {
-				trigger_error("Die Datenuebermittlung zu Loxone ist nicht aktiv. Bitte in der config.php aktivieren", E_USER_WARNING); 
+				trigger_error("Die Datenuebermittlung zu Loxone ist nicht aktiv. Bitte in der config.php aktivieren", E_USER_NOTICE); 
 				$value = "Datenübermittlung ist aus";
 				$valuesplit[0]=" ";
 				$valuesplit[1]=" ";
@@ -815,7 +902,7 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 				$handle = fopen("http://$loxuser:$loxpassword@$loxip/dev/sps/io/S-TransportInfo$master/$GetTransportInfo", "r");
 		     	echo '</PRE>';
 			} else { 
-			trigger_error("Die Datenuebermittlung zu Loxone ist nicht aktiv. Bitte in der config.php aktivieren", E_USER_WARNING); }
+			trigger_error("Die Datenuebermittlung zu Loxone ist nicht aktiv. Bitte in der config.php aktivieren", E_USER_NOTICE); }
       	break; 
 		
 
@@ -828,7 +915,7 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 				$handle = fopen("http://$loxuser:$loxpassword@$loxip/dev/sps/io/S-Mute$master/$GetMute", "r");
 	     		echo '</PRE>';
 			} else { 
-				trigger_error("Die Datenuebermittlung zu Loxone ist nicht aktiv. Bitte in der config.php aktivieren", E_USER_WARNING); }
+				trigger_error("Die Datenuebermittlung zu Loxone ist nicht aktiv. Bitte in der config.php aktivieren", E_USER_NOTICE); }
       	break; 
 		
 
@@ -841,7 +928,7 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 				$handle = fopen("http://$loxuser:$loxpassword@$loxip/dev/sps/io/S-Volume$master/$GetVolume", "r");
 	     		echo '</PRE>';
 			} else { 
-				trigger_error("Die Datenuebermittlung zu Loxone ist nicht aktiv. Bitte in der config.php aktivieren", E_USER_WARNING); }
+				trigger_error("Die Datenuebermittlung zu Loxone ist nicht aktiv. Bitte in der config.php aktivieren", E_USER_NOTICE); }
       	break; 
 
 		
@@ -855,7 +942,7 @@ function loxdata() {
 
 	// prüft ob die Verbindung zu Loxone in der config eingeschaltet ist			
 	if($config['LoxDaten'] === false) {
-		trigger_error("Die Datenuebermittlung zu Loxone ist nicht aktiv. Bitte zuerst in der config.php aktivieren", E_USER_WARNING);
+		trigger_error("Die Datenuebermittlung zu Loxone ist nicht aktiv. Bitte zuerst in der config.php aktivieren", E_USER_NOTICE);
 		exit;
 	}	
 	$GetVolume = $sonos->GetVolume();
@@ -864,7 +951,7 @@ function loxdata() {
 		$handle = @fopen("http://$loxuser:$loxpassword@$loxip/dev/sps/io/S-Volume$master/$GetVolume", "r");
 		$handle = @fopen("http://$loxuser:$loxpassword@$loxip/dev/sps/io/S-TransportInfo$master/$GetTransportInfo", "r");
 	} catch (Exception $e) {
-		trigger_error("Die Verbindung zu Loxone konnte nicht initiiert werden!", E_USER_WARNING);
+		trigger_error("Die Verbindung zu Loxone konnte nicht initiiert werden!", E_USER_NOTICE);
 	}
 }
 		
@@ -1015,7 +1102,7 @@ function loxdata() {
 				$timer = $sonos->Sleeptimer($timer);
 			}
 		} else {
-		trigger_error('Die eingegebene Zeitspanne ist nicht korrekt, bitte korrigieren', E_USER_WARNING);
+		trigger_error('Die eingegebene Zeitspanne ist nicht korrekt, bitte korrigieren', E_USER_NOTICE);
 		}
 		break;
 
@@ -1089,14 +1176,13 @@ function loxdata() {
 		
 		case 'setledstate':
 			echo '<PRE>';
-					if(($_GET['state'] == "On") || ($_GET['state'] == "Off")) {
-					$state = $_GET['state'];
-					$sonos->SetLEDState($state);
-					} else {
-						trigger_error('Bitte Eingabe korrigieren. On oder Off ist nur erlaubt', E_USER_WARNING);
-					}
-			echo '</PRE>';
-		
+			if(($_GET['state'] == "On") || ($_GET['state'] == "Off")) {
+				$state = $_GET['state'];
+				$sonos->SetLEDState($state);
+			} else {
+				trigger_error('Bitte Eingabe korrigieren. On oder Off ist nur erlaubt', E_USER_NOTICE);
+				echo '</PRE>';
+			}
 		break;
 		
 		#case 'getinvisible':
@@ -1227,6 +1313,13 @@ function loxdata() {
 			echo '</PRE>';
 		break;
 		
+		case 'test':
+			echo '<PRE>';
+			
+			echo '</PRE>';
+		break;
+
+		
 		
 		case 'getzoneinfo':
 		
@@ -1251,7 +1344,7 @@ function loxdata() {
 		break;
 		  
 	default:
-       trigger_error("Dieser Befehl ist nicht bekannt. <br>sonos2.php?zone=SONOSPLAYER&action=BEFEHL&BEFEHL=Option", E_USER_WARNING);
+       trigger_error("Dieser Befehl ist nicht bekannt. <br>sonos2.php?zone=SONOSPLAYER&action=BEFEHL&BEFEHL=Option", E_USER_NOTICE);
 
 	} 
 	
@@ -1259,7 +1352,7 @@ function loxdata() {
 	}
 	else 
 	{
-	trigger_error("Der Zone ist nicht im angegebenen Bereich vorhanden. (siehe config.php)", E_USER_WARNING);
+	trigger_error("Die Zone ist nicht im angegebenen Bereich vorhanden. (siehe config.php)", E_USER_NOTICE);
 }
 
 
@@ -1375,7 +1468,7 @@ function loxdata() {
  function _assertNumeric($number) {
 	// prüft ob eine Eingabe numerisch ist
     if(!is_numeric($number)) {
-        trigger_error("Die Eingabe ist nicht numerisch. Bitte wiederholen", E_USER_WARNING);
+        trigger_error("Die Eingabe ist nicht numerisch. Bitte wiederholen", E_USER_NOTICE);
     }
     return $number;
  }
@@ -1386,23 +1479,67 @@ function loxdata() {
 /* @return: TRUE or FALSE
 /******************************************************************************************************/
 function networkstatus() {
-	global $sonoszone, $zonen, $config, $debug;
-	$Server = $config['sonoszone'];
-	foreach($sonoszone as $zonen => $ip) {
+	global $sonoszonen, $zonen, $config, $debug;
+	
+	foreach($sonoszonen as $zonen => $ip) {
 		$start = microtime(true);
-		$socket = @fsockopen($ip[0], 1400, $errno, $errstr, 1);
-		if(!$socket) {
-			trigger_error("Die Zone ".$zonen." mit IP: ".$ip[0]." ==> Offline :-( Bitte dringend Status überprüfen!<br/>", E_USER_ERROR); 
-			exit;
+		if (!$socket = @fsockopen($ip[0], 1400, $errno, $errstr, 3)) {
+			echo "Die Zone ".$zonen." mit IP: ".$ip[0]." ==> Offline :-( Bitte dringend Status überprüfen!<br/>"; 
 		} else { 
-			if($debug == 1) { 	
-				$latency = microtime(true) - $start;
-				$latency = round($latency * 10000);
-				echo "Die Zone ".$zonen." mit IP: ".$ip[0]." ==> Online :-) Die Antwortzeit betrug ".$latency." Millisekunden <br/>";
-			}
+			$latency = microtime(true) - $start;
+			$latency = round($latency * 10000);
+			echo "Die Zone ".$zonen." mit IP: ".$ip[0]." ==> Online :-) Die Antwortzeit betrug ".$latency." Millisekunden <br/>";
 		}
 	}
+	
 }
+
+
+/*****************************************************************************************************
+/* Funktion : getzonesonline --> Prüft ob alle Zonen Online sind
+/*
+/* @return: Array aller Online Zonen
+/******************************************************************************************************/
+function getzonesonline() {
+	global $sonoszonen, $zonen, $config, $debug, $debug;
+	
+	foreach($sonoszonen as $zonen => $ip) {
+		if (!$socket = @fsockopen($ip[0], 1400, $errno, $errstr, 2)) {
+			echo '<br>';
+		} else {
+			$sonoszone[$zonen] = $ip;
+		}
+	}
+	print_r($sonoszone);
+}
+
+
+/*****************************************************************************************************
+/* Funktion : getmemberonline --> Prüft ob  Member Online sind
+/*
+/* @param:  Array der Member die geprüft werden soll
+/* @return: Array aller Member Online Zonen
+/******************************************************************************************************/
+function getmemberonline($member) {
+	global $sonoszonen, $zonen, $debug, $config;
+	
+	$memberzones = $member;
+	foreach($memberzones as $zonen) {
+		if(!array_key_exists($zonen, $sonoszonen)) {
+			trigger_error("Die angegebene Zone (Member) existiert nicht. Bitte korrigieren!!", E_USER_NOTICE);
+		}
+	}
+	foreach($memberzones as $zonen) {
+		if(!$socket = @fsockopen($sonoszonen[$zonen][0], 1400, $errno, $errstr, 2)) {
+			echo '<br>';
+		} else {
+			$members[] = $zonen;
+		}
+	}
+	// print_r($members);
+	return($members);
+}
+
 
 /*****************************************************************************************************
 /* Funktion : URL_Encode --> ersetzt Steuerzeichen durch URL Encode
@@ -1439,8 +1576,8 @@ function File_Put_Array_As_JSON($FileName, $ar, $zip=false) {
 /******************************************************************************************************/	
 function File_Get_Array_From_JSON($FileName, $zip=false) {
 	// liest eine JSON Datei und erstellt eine Array
-    if (! is_file($FileName)) 	{ trigger_error("Fatal: Die Datei $FileName gibt es nicht.", E_USER_WARNING); }
-	    if (! is_readable($FileName))	{ trigger_error("Fatal: Die Datei $FileName ist nicht lesbar.", E_USER_WARNING); }
+    if (! is_file($FileName)) 	{ trigger_error("Fatal: Die Datei $FileName gibt es nicht.", E_USER_NOTICE); }
+	    if (! is_readable($FileName))	{ trigger_error("Fatal: Die Datei $FileName ist nicht lesbar.", E_USER_NOTICE); }
             if (! $zip) {
 				return json_decode(file_get_contents($FileName), true);
             } else {
@@ -1495,7 +1632,7 @@ function File_Get_Array_From_JSON($FileName, $zip=false) {
 		fclose ($handle);
 		return;
 	}
-		trigger_error("Logging ist derzeit ausgeschaltet. Bitte in der config.php aktivieren", E_USER_WARNING);
+		trigger_error("Logging ist derzeit ausgeschaltet. Bitte in der config.php aktivieren", E_USER_NOTICE);
  }
  
 /*****************************************************************************************************
@@ -1538,7 +1675,7 @@ function File_Get_Array_From_JSON($FileName, $zip=false) {
 	fputs($datei,$eintrag."\n");
 	fclose($datei);
 	} else
-		trigger_error("Logging ist derzeit ausgeschaltet. Bitte in der config.php aktivieren", E_USER_WARNING);
+		trigger_error("Logging ist derzeit ausgeschaltet. Bitte in der config.php aktivieren", E_USER_NOTICE);
  }
  
 
@@ -1611,7 +1748,7 @@ function create_tts($text, $messageid) {
 	$messageid = !empty($_GET['messageid']) ? $_GET['messageid'] : '0';
 	$messageid = _assertNumeric($messageid);
 	$rampsleep = $config['rampto'];
-					
+							
 	if(isset($_GET['weather'])) {
 		# ruft die weather-to-speech Funktion auf
 		include_once("weather-to-speech.php");
@@ -1646,17 +1783,17 @@ function create_tts($text, $messageid) {
 		$words = substr($_GET['text'], 0, 500); // Begrenzung des Textes auf 500 Zeichen
 		$words = urlencode($_GET['text']);				
 		}	
-	# Name der MP3 als MD5 Hash zum Speichern
+	# Name der MP3 als MD5 Hash zum Speichern codieren
 	$fileo  = md5($words);
 	$fileolang = "$fileo";
 	# ruft die zur Verfügung stehenden T2S Engines auf (je nach config)					
 	if (($messageid == '0') && ($fileo != '')) {
 		if ($config['t2s_engine'] === 1001) {
 			include_once("Voice_Engines/VoiceRSS.php");
-			}
+		}
 		if ($config['t2s_engine'] === 3001) {
 			include_once("Voice_Engines/MAC_OSX.php");
-			}
+		}
 		if ($config['t2s_engine'] === 2001) {
 			include_once("Voice_Engines/Ivona.php");
 			if(!isset($_GET['voice'])) {
@@ -1665,10 +1802,10 @@ function create_tts($text, $messageid) {
 				$voice = $_GET['voice'];
 			}
 		}
-		t2s($messageid);
-		return $messageid;
-		}
+	t2s($messageid);
+	return $messageid;
 	}
+}
 
 /*****************************************************************************************************
 /* WICHTIGER TEIL DER GRUPPEN T2S DURCHSAGE
@@ -1716,9 +1853,13 @@ function save_current_gr($groupvol) {
 	// erstellt Gruppe für T2S
 	$member = $_GET['member'];
 	$member = explode(',', $member);
+	#$member = getmemberonline($member);
 	$masterrincon = getRINCON($sonoszone[$master][0]); 
 	$sonos = new PHPSonos($sonoszone[$master][0]);
+	#$sonos->SetAVTransportURI("");
 	$sonos->BecomeCoordinatorOfStandaloneGroup();
+	$member = getmemberonline($member);
+	#print_r($member);
 	foreach ($member as $zone) {
 		$sonos = new PHPSonos($sonoszone[$zone][0]);
 		$sonos->SetAVTransportURI("x-rincon:" . $masterrincon); 
@@ -1743,6 +1884,7 @@ function restore_previous_gr() {
 	$member = $_GET['member'];
 	$master = $_GET['zone'];
 	$member = explode(',', $member);
+	$member = getmemberonline($member);
 	foreach ($member as $zone) {
 		$sonos = new PHPSonos($sonoszone[$zone][0]);
 		$sonos->BecomeCoordinatorOfStandaloneGroup();
@@ -1752,7 +1894,7 @@ function restore_previous_gr() {
 	$import = File_Get_Array_From_JSON($file, $zip=false);
 	// fügt den Master der Array hinzu
 	array_push($member, $master);
-	print_r($import);
+	#print_r($import);
 	// Wiederherstellen der Ursprungszustände
 	foreach($member as $player => $zone) {
 		$sonos = new PHPSonos($sonoszone[$zone][0]); //Sonos IP Adresse
@@ -1783,6 +1925,7 @@ function restore_previous_gr() {
 			# Die Zone ist in einer Gruppe
 			if(isset($import[$zone]['GroupCoordinator'])) {
 				if ((substr($import[$zone]['PositionInfo']["TrackURI"], 0, 9) == "x-rincon:") or ($import[$zone]['GroupCoordinator'] == 'true')) {
+					
 					# Die Zone ist Master einer Gruppe
 					if (($import[$zone]['GroupCoordinator'] = 'true') && (substr($import[$zone]['PositionInfo']["TrackURI"], 0, 9) != "x-rincon:")) {
 						$members = $import[$zone]['Groupmember'];
@@ -1842,6 +1985,7 @@ function play_tts($messageid, $groupvol) {
 		$sonos->SetMute(false);
 		$sonos->SetVolume($volume);
 	}
+	$sonos = new PHPSonos($sonoszone[$master][0]); //Sonos IP Adresse
 	if(isset($_GET['messageid'])) {
 		$mp3 = $_GET['messageid'];
 		if((!empty($config['MP3path'])) || (!empty($mp3))) {
@@ -1850,7 +1994,6 @@ function play_tts($messageid, $groupvol) {
 	} else {
 		$mpath = $config['messagespath'];
 	}
-	$sonos = new PHPSonos($sonoszone[$master][0]); //Sonos IP Adresse
 	if(isset($_GET['playgong'])) {
 		if(isset($_GET['playgong']) && ($_GET['playgong'] == "yes")) {
 			if((!empty($config['MP3path'])) || (!empty($mp3))) {
@@ -1862,29 +2005,27 @@ function play_tts($messageid, $groupvol) {
 			$sonos->AddToQueue("x-file-cifs:" . $mpath . "/" . $_GET['playgong'] . ".mp3");	
 		}
 		if($groupvol == "1") { // Gruppen T2S Durchsage
-			$save_status = $sonos->GetCurrentPlaylist();
-			$message_pos = count($save_status);
-		} elseif ($groupvol == "0") { // Einzel T2S Durchsage
-			$message_pos = count($save_status['CurrentPlaylist']) + 1;
-		} elseif ($groupvol == "3") { // falls Zone in einer Gruppe war
-			$gmaster = getmaster($master);
-			if(($gmaster == true) and (empty($save_gr_status['PositionInfo']['URI']))) { // Zone ist Gruppenmaster
-				$message_pos = count($save_status['CurrentPlaylist']) + 1; 
-			}
-			if(($gmaster == true) and (!empty($save_gr_status['PositionInfo']['URI']))) { // Zone ist Gruppenmaster
-				$message_pos = count($save_status['CurrentPlaylist']) + 2; 
-			} 
-			if($gmaster == false) { // Zone ist Gruppenmember
-				$message_pos = count($save_status['CurrentPlaylist']) + 1; 
-			}
+			$save_plist = $sonos->GetCurrentPlaylist();
+			$message_pos = count($save_plist);
 		}
-		#$sonos = new PHPSonos($sonoszone[$master][0]);
+		elseif(($groupvol == "0") and (empty($save_status['PositionInfo']["duration"]))) { // Einzel T2S Durchsage an Gruppe
+			$sonos = new PHPSonos($sonoszone[$master][0]); //Sonos IP Adresse
+			$save_plist = $sonos->GetCurrentPlaylist();
+			$message_pos = count($save_plist);
+		} else { // Einzel T2S Durchsage an Single Zone
+			$message_pos = count($save_status['CurrentPlaylist']) + 1;
+		}
+		$sonos = new PHPSonos($sonoszone[$master][0]);
 		$sonos->SetQueue("x-rincon-queue:" . getRINCON($sonoszone[$master][0]) . "#0"); //Playliste aktivieren
 		$sonos->SetGroupMute(false);
-		$sonos->SetTrack($message_pos);
-		$sonos->Play();   // Abspielen
+		$sonos->SetPlayMode('NORMAL');
+		try {
+			$sonos->SetTrack($message_pos);
+			$sonos->Play();   // Abspielen
+		} catch (Exception $e) {
+			trigger_error("Die T2S Message konnte nicht abgespielt werden!", E_USER_NOTICE);
+		}
 		$abort = false;
-
 		# Prüfen ob Meldung zu Ende gespielt ist
 		sleep($config['sleeptimegong']); // warten gemäß config.php
 		while ($sonos->GetTransportInfo()==1) {
@@ -1904,30 +2045,30 @@ function play_tts($messageid, $groupvol) {
 			$sonos = new PHPSonos($sonoszone[$master][0]); //Sonos IP Adresse
 			$sonos->AddToQueue('x-file-cifs:'.$mpath . "/" . $messageid . ".mp3");
 		}
+		#echo 'groupvol: '.$groupvol;
+		$gmaster = getmaster($master);
 		if($groupvol == "1") { // Gruppen T2S Durchsage
-			$save_status = $sonos->GetCurrentPlaylist();
-			$message_pos = count($save_status);
-		} elseif ($groupvol == "0") { // Einzel T2S Durchsage
-			$message_pos = count($save_status['CurrentPlaylist']) + 1;
-		} elseif ($groupvol == "3") { // falls Zone in einer Gruppe der Master war
-			$gmaster = getmaster($master);
-			if(($gmaster == true) and (empty($save_gr_status['PositionInfo']['URI']))) { // Zone ist Gruppenmaster
-				$message_pos = count($save_status['CurrentPlaylist']) + 1; 
-			}
-			if(($gmaster == true) and (!empty($save_gr_status['PositionInfo']['URI']))) { // Zone ist Gruppenmaster
-				$message_pos = count($save_status['CurrentPlaylist']) + 2; 
-			} 
-			if($gmaster == false) { // Zone ist Gruppenmember
-				$message_pos = count($save_status['CurrentPlaylist']) + 1; 
-			}
+			$save_plist = $sonos->GetCurrentPlaylist();
+			$message_pos = count($save_plist);
 		}
-		#$sonos = new PHPSonos($sonoszone[$master][0]);
+		elseif(($groupvol == "0") and (empty($save_status['PositionInfo']["duration"]))) { // Einzel T2S Durchsage an Gruppe
+			$sonos = new PHPSonos($sonoszone[$master][0]); //Sonos IP Adresse
+			$save_plist = $sonos->GetCurrentPlaylist();
+			$message_pos = count($save_plist);
+		} else { // Einzel T2S Durchsage an Single Zone
+			$message_pos = count($save_status['CurrentPlaylist']) + 1;
+		}
+		$sonos = new PHPSonos($sonoszone[$master][0]);
 		$sonos->SetQueue("x-rincon-queue:" . getRINCON($sonoszone[$master][0]) . "#0"); //Playliste aktivieren
 		$sonos->SetGroupMute(false);
-		$sonos->SetTrack($message_pos);
-		$sonos->Play();   // Abspielen
+		$sonos->SetPlayMode('NORMAL');
+		try {
+			$sonos->SetTrack($message_pos);
+			$sonos->Play();   // Abspielen
+		} catch (Exception $e) {
+			trigger_error("Die T2S Message konnte nicht abgespielt werden!", E_USER_NOTICE);
+		}
 		$abort = false;
-		
 		# Prüfen ob Meldung zu Ende gespielt ist
 		sleep($config['sleeptimegong']); // warten gemäﬂ config.php
 		while ($sonos->GetTransportInfo()==1) {
@@ -1965,7 +2106,7 @@ function save_current_ez() {
 		}
 	}
 
-	if ($save_status['PositionInfo']["TrackDuration"] == '')  {  
+	if ($save_status['PositionInfo']["TrackDuration"] == '')  { 
 		# zum Wiederherstellen es lief ein Radio Sender
 		$sonos = new PHPSonos($sonoszone[$master][0]); //Sonos IP Adresse
 	}
@@ -1995,6 +2136,7 @@ function save_current_ez() {
 /**************************************************************************************************************/
 function restore_previous_ez($save_status, $groupmember = false) {
 	global $save_status, $sonos, $rampsleep, $groupmember;
+	
 	# Playliste
 	if (substr($save_status['PositionInfo']["TrackURI"], 0, 5) == "npsdy" || 
 		substr($save_status['PositionInfo']["TrackURI"], 0, 11) == "x-file-cifs" || 
@@ -2056,10 +2198,10 @@ function save_current_group_ez() {
 		$check = getgroupstatus($master);
 		if($check = 'master') {
 			$save_gr_status['PositionInfo'];
-			$groupvol = '3';
+			#$groupvol = '3';
 		}
 		#print_r($groupvol);
-		return $groupvol;
+		#return $groupvol;
 	} 
 #}
 
@@ -2599,6 +2741,40 @@ function getgroupstatus($player = 0){
 		}
 	}
 	$masterrincon = "";
+}
+
+/********************************************************************************************
+/* Funktion : checkTTSkeys --> prüft die verwendete TTS Instanz auf Korrektheit
+/* @param: leer                             
+/*
+/* @return: falls OK --> nichts, andernfalls Abbruch und Eintrag in error log
+/********************************************************************************************/
+function checkTTSkeys() {
+	Global $config;
+	
+	if ($config['t2s_engine'] === 1001) {
+		if (!file_exists("Voice_Engines/VoiceRSS.php")) {
+			trigger_error("Die Instanz VoiceRSS ist derzeit nicht vorhanden. Bitte nachinstallieren!", E_USER_NOTICE);
+		} else {
+			if(strlen($config['API-key']) !== 32) {
+				trigger_error("Der angegebene VoiceRSS API-Key ist ungültig. Bitte korrigieren!", E_USER_NOTICE);
+			}
+		}
+	}
+	if ($config['t2s_engine'] === 3001) {
+		if (!file_exists("Voice_Engines/MAC_OSX.php")) {
+			trigger_error("Die Instanz MAC OSX ist derzeit nicht vorhanden. Bitte nachinstallieren!", E_USER_NOTICE);
+		}
+	}
+	if ($config['t2s_engine'] === 2001) {
+		if (!file_exists("Voice_Engines/Ivona.php")) {
+			trigger_error("Die Instanz Ivona ist derzeit nicht vorhanden. Bitte nachinstallieren!", E_USER_NOTICE);
+		} else {
+			if((strlen($config['API-key']) !== 20) or (strlen($config['secret-key']) !== 40)) {
+				trigger_error("Der angegebene Ivona access oder secret Key ist ungültig. Bitte korrigieren!", E_USER_NOTICE);
+			}
+		}
+	}
 }
 
 
