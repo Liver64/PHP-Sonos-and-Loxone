@@ -65,7 +65,7 @@ $config = array(
 	####################################################################################################
 	# Text-to-Speech Parameter (Ivona oder VoiceRSS)
 	#---------------------------------------------------------------------------------------------------
-	#'API-key'  => '1075cabdb6954691bd60825cf3800858', 		// VoiceRSS
+	#'API-key'  => 'xxxxx', 		// VoiceRSS
 	'API-key' => 'xxx', 					// Ivona
 	# Secret Key eingeben (nur Ivona)
 	'secret-key'  => 'xxxx',
