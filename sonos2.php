@@ -486,7 +486,6 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 		case 'addmember':
 		global $sonoszone, $sonos;
 			$member = $_GET['member'];
-			$member = getmemberonline($member);
 			$masterrincon = getRINCON($sonoszone[$master][0]); 
 			$sonos = new PHPSonos($sonoszone[$member][0]); 
 			$sonos->SetAVTransportURI("x-rincon:" . $masterrincon); 
@@ -496,7 +495,6 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 		case 'removemember':
 		global $sonoszone, $sonos;
 			$member = $_GET['member'];
-			$member = getmemberonline($member);
 			$sonos = new PHPSonos($sonoszone[$member][0]);
 			$sonos->BecomeCoordinatorOfStandaloneGroup();
 		break;
