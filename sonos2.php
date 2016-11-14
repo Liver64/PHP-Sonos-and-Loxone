@@ -2,8 +2,8 @@
 
 ##############################################################################################################################
 #
-# Version: 	2.0.6
-# Datum: 	10.10.2016
+# Version: 	2.0.7
+# Datum: 	10.11.2016
 # veröffentlicht in forum: https://www.loxforum.com/
 # 
 # Historie:
@@ -99,6 +99,7 @@
 #			angegeben sind oder nicht.
 #			Bugfix bei T2S Durchsage behoben (Playlist im Shuffle Modus noch in der Queue und Radio läuft) 
 #			- diverse kleinere Bugfix gelöst (sonos-to-speech, T2S Volume bei Gruppendurchsagezone für Master)
+# 2.0.7.	add-/removemember gefixt
 #
 #			
 # bekannte Probleme:	bei T2S an eine 3-er Gruppe wobei zone=<ZONE> Master ist und bei der T2S zusätzlich ein Member der gleichen
